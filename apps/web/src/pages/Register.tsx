@@ -9,7 +9,7 @@ import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
 import { Badge } from '../components/ui/badge';
-import { Loader2, AlertCircle, Building2, UserCheck, Truck, TrainFront, Plane, Ship } from 'lucide-react';
+import { Loader2, AlertCircle, Building2, UserCheck, Truck, TrainFront, Plane, Ship, Eye, EyeOff } from 'lucide-react';
 import { toast } from 'sonner';
 
 const MODE_ICONS: Record<OrgMode, React.ComponentType<{ className?: string }>> = {
@@ -27,6 +27,8 @@ export const Register: React.FC = () => {
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+
   const [orgName, setOrgName] = useState('');
   const [country] = useState('India');
   const [selectedState, setSelectedState] = useState('');
@@ -159,18 +161,36 @@ export const Register: React.FC = () => {
 
                 <div className="space-y-1">
                   <Label htmlFor="reg-password">Password (min 6 characters)</Label>
-                  <Input
-                    id="reg-password"
-                    type="password"
-                    required
-                    minLength={6}
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder="••••••••"
-                    autoComplete="new-password"
-                  />
+                  <div className="relative">
+                    <Input
+                      id="reg-password"
+                      type={showPassword ? 'text' : 'password'}
+                      required
+                      minLength={6}
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      placeholder="••••••••"
+                      autoComplete="new-password"
+                      className="pr-10"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword((prev) => !prev)}
+                      aria-label={showPassword ? 'Hide plain text' : 'Show plain text'}
+                      title={showPassword ? 'Hide password' : 'Show password'}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 transition-colors focus:outline-none p-1"
+                    >
+                      {showPassword ? (
+                        <EyeOff className="w-4 h-4 text-blue-600" />
+                      ) : (
+                        <Eye className="w-4 h-4 text-slate-400" />
+                      )}
+                    </button>
+
+                  </div>
                 </div>
               </div>
+
 
               {/* Organization & Location Section */}
               <div className="space-y-4">

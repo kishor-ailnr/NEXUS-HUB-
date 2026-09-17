@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Shield, ShieldAlert, Lock, UserCheck, X, FileText, Check, Edit2, ExternalLink, Loader2 } from 'lucide-react';
+import { Shield, ShieldAlert, Lock, UserCheck, X, FileText, Check, Edit2, ExternalLink, Loader2, Eye, EyeOff } from 'lucide-react';
 import { AdminUser, AdminReport, UserRole } from '@nexus-ways/shared';
 import { adminService } from '../services/admin';
 import { tripsService } from '../services/trips';
@@ -23,8 +23,10 @@ export const AdminPanelModal: React.FC<AdminPanelModalProps> = ({ currentUserRol
   const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
   const [isAdminPanelOpen, setIsAdminPanelOpen] = useState(false);
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [isVerifying, setIsVerifying] = useState(false);
   const [verifyError, setVerifyError] = useState<string | null>(null);
+
 
   // Admin panel data
   const [users, setUsers] = useState<AdminUser[]>([]);
@@ -250,16 +252,34 @@ export const AdminPanelModal: React.FC<AdminPanelModalProps> = ({ currentUserRol
 
                 <div className="space-y-1.5">
                   <Label htmlFor="admin-password">Your Password</Label>
-                  <Input
-                    id="admin-password"
-                    type="password"
-                    placeholder="••••••••••••"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                    autoFocus
-                  />
+                  <div className="relative">
+                    <Input
+                      id="admin-password"
+                      type={showPassword ? 'text' : 'password'}
+                      placeholder="••••••••••••"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      required
+                      autoFocus
+                      className="pr-10"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword((prev) => !prev)}
+                      aria-label={showPassword ? 'Hide plain text' : 'Show plain text'}
+                      title={showPassword ? 'Hide password' : 'Show password'}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 transition-colors focus:outline-none p-1"
+                    >
+                      {showPassword ? (
+                        <EyeOff className="w-4 h-4 text-blue-600" />
+                      ) : (
+                        <Eye className="w-4 h-4 text-slate-400" />
+                      )}
+                    </button>
+
+                  </div>
                 </div>
+
 
                 <div className="flex justify-end gap-2 pt-2">
                   <Button
