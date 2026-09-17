@@ -28,6 +28,12 @@ describe('Supabase Real RLS Live Verification (e2e)', () => {
   let notifTargetedB: any;
   let notifBroadcastB: any;
   let alertB: any;
+  let aircraftB: any;
+  let flightB: any;
+  let flightMovementB: any;
+  let vesselB: any;
+  let voyageB: any;
+  let voyageMovementB: any;
 
   const runId = Date.now().toString().slice(-6);
   const userAEmail = `e2e_a_${runId}@rls-live.internal`;
@@ -272,7 +278,165 @@ describe('Supabase Real RLS Live Verification (e2e)', () => {
       .select()
       .single();
     movementB = tm;
+ 
+    // 7. Seed Airways Org B records
+    const { data: a1 } = await adminClient
+      .from('airports')
+      .insert({
+        org_id: orgBId,
+        name: `Airport Bom-${runId}`,
+        iata_code: `B${runId.slice(-2)}`,
+        icao_code: `VAB${runId.slice(-1)}`,
+        lat: 19.0896,
+        lng: 72.8656,
+      })
+      .select()
+      .single();
+
+    const { data: a2 } = await adminClient
+      .from('airports')
+      .insert({
+        org_id: orgBId,
+        name: `Airport Del-${runId}`,
+        iata_code: `D${runId.slice(-2)}`,
+        icao_code: `VID${runId.slice(-1)}`,
+        lat: 28.5562,
+        lng: 77.1000,
+      })
+      .select()
+      .single();
+
+    const { data: ac } = await adminClient
+      .from('aircraft')
+      .insert({
+        org_id: orgBId,
+        tail_number: `VT-RLS-${runId}`,
+        aircraft_type: 'Boeing 777F',
+        cargo_capacity_kg: 102000,
+        status: 'idle',
+      })
+      .select()
+      .single();
+    aircraftB = ac;
+
+    const { data: fc } = await adminClient
+      .from('flight_crew')
+      .insert({
+        org_id: orgBId,
+        user_id: userBId,
+        license_number: `ATPL-RLS-${runId}`,
+        crew_role: 'pilot',
+        status: 'available',
+      })
+      .select()
+      .single();
+
+    const { data: fl } = await adminClient
+      .from('flights')
+      .insert({
+        org_id: orgBId,
+        flight_number: `NW-${runId}`,
+        origin_airport_id: a1?.id,
+        destination_airport_id: a2?.id,
+      })
+      .select()
+      .single();
+    flightB = fl;
+
+    const { data: fm } = await adminClient
+      .from('flight_movements')
+      .insert({
+        org_id: orgBId,
+        flight_id: flightB.id,
+        aircraft_id: aircraftB.id,
+        pilot_id: fc?.id,
+        status: 'planned',
+        distance_km: 1150,
+        duration_minutes: 120,
+      })
+      .select()
+      .single();
+    flightMovementB = fm;
+
+    // 8. Seed Seaways Org B records
+    const { data: p1 } = await adminClient
+      .from('ports')
+      .insert({
+        org_id: orgBId,
+        name: `Port JNPT-${runId}`,
+        unlocode: `INJN${runId.slice(-1)}`,
+        lat: 18.95,
+        lng: 72.95,
+      })
+      .select()
+      .single();
+
+    const { data: p2 } = await adminClient
+      .from('ports')
+      .insert({
+        org_id: orgBId,
+        name: `Port Mundra-${runId}`,
+        unlocode: `INMU${runId.slice(-1)}`,
+        lat: 22.74,
+        lng: 69.70,
+      })
+      .select()
+      .single();
+
+    const { data: vs } = await adminClient
+      .from('vessels')
+      .insert({
+        org_id: orgBId,
+        vessel_name: `Ocean Titan ${runId}`,
+        imo_number: `98${runId.slice(-5)}`,
+        vessel_type: 'Container Ship',
+        dwt_tonnes: 120000,
+        status: 'idle',
+      })
+      .select()
+      .single();
+    vesselB = vs;
+
+    const { data: sc } = await adminClient
+      .from('sea_crew')
+      .insert({
+        org_id: orgBId,
+        user_id: userBId,
+        certificate_number: `COC-M-${runId}`,
+        crew_role: 'master',
+        status: 'available',
+      })
+      .select()
+      .single();
+
+    const { data: vy } = await adminClient
+      .from('voyages')
+      .insert({
+        org_id: orgBId,
+        voyage_number: `VOY-${runId}`,
+        origin_port_id: p1?.id,
+        destination_port_id: p2?.id,
+      })
+      .select()
+      .single();
+    voyageB = vy;
+
+    const { data: vm } = await adminClient
+      .from('voyage_movements')
+      .insert({
+        org_id: orgBId,
+        voyage_id: voyageB.id,
+        vessel_id: vesselB.id,
+        master_id: sc?.id,
+        status: 'planned',
+        distance_km: 840,
+        duration_minutes: 1440,
+      })
+      .select()
+      .single();
+    voyageMovementB = vm;
   });
+
 
   afterAll(async () => {
     if (orgAId) await adminClient.from('organizations').delete().eq('id', orgAId);
@@ -371,4 +535,99 @@ describe('Supabase Real RLS Live Verification (e2e)', () => {
       expect(data).toEqual([]);
     });
   });
+
+  describe('Airways Mode Tenant Isolation', () => {
+    it('blocks Org A user from selecting Org B aircraft', async () => {
+      const { data } = await clientA.from('aircraft').select('*').eq('id', aircraftB.id);
+      expect(data).toEqual([]);
+    });
+
+    it('blocks Org A user from updating Org B aircraft', async () => {
+      const { data } = await clientA.from('aircraft').update({ aircraft_type: 'Hacked Jet' }).eq('id', aircraftB.id).select();
+      expect(data).toEqual([]);
+    });
+
+    it('blocks Org A user from deleting Org B aircraft', async () => {
+      const { data } = await clientA.from('aircraft').delete().eq('id', aircraftB.id).select();
+      expect(data).toEqual([]);
+    });
+
+    it('blocks Org A user from selecting Org B flights', async () => {
+      const { data } = await clientA.from('flights').select('*').eq('id', flightB.id);
+      expect(data).toEqual([]);
+    });
+
+    it('blocks Org A user from updating Org B flights', async () => {
+      const { data } = await clientA.from('flights').update({ flight_number: 'HACKED-FLIGHT' }).eq('id', flightB.id).select();
+      expect(data).toEqual([]);
+    });
+
+    it('blocks Org A user from deleting Org B flights', async () => {
+      const { data } = await clientA.from('flights').delete().eq('id', flightB.id).select();
+      expect(data).toEqual([]);
+    });
+
+    it('blocks Org A user from selecting Org B flight movements', async () => {
+      const { data } = await clientA.from('flight_movements').select('*').eq('id', flightMovementB.id);
+      expect(data).toEqual([]);
+    });
+
+    it('blocks Org A user from updating Org B flight movements', async () => {
+      const { data } = await clientA.from('flight_movements').update({ status: 'completed' }).eq('id', flightMovementB.id).select();
+      expect(data).toEqual([]);
+    });
+
+    it('blocks Org A user from deleting Org B flight movements', async () => {
+      const { data } = await clientA.from('flight_movements').delete().eq('id', flightMovementB.id).select();
+      expect(data).toEqual([]);
+    });
+  });
+
+  describe('Seaways Mode Tenant Isolation', () => {
+    it('blocks Org A user from selecting Org B vessels', async () => {
+      const { data } = await clientA.from('vessels').select('*').eq('id', vesselB.id);
+      expect(data).toEqual([]);
+    });
+
+    it('blocks Org A user from updating Org B vessels', async () => {
+      const { data } = await clientA.from('vessels').update({ vessel_name: 'Hacked Vessel' }).eq('id', vesselB.id).select();
+      expect(data).toEqual([]);
+    });
+
+    it('blocks Org A user from deleting Org B vessels', async () => {
+      const { data } = await clientA.from('vessels').delete().eq('id', vesselB.id).select();
+      expect(data).toEqual([]);
+    });
+
+    it('blocks Org A user from selecting Org B voyages', async () => {
+      const { data } = await clientA.from('voyages').select('*').eq('id', voyageB.id);
+      expect(data).toEqual([]);
+    });
+
+    it('blocks Org A user from updating Org B voyages', async () => {
+      const { data } = await clientA.from('voyages').update({ voyage_number: 'HACKED-VOYAGE' }).eq('id', voyageB.id).select();
+      expect(data).toEqual([]);
+    });
+
+    it('blocks Org A user from deleting Org B voyages', async () => {
+      const { data } = await clientA.from('voyages').delete().eq('id', voyageB.id).select();
+      expect(data).toEqual([]);
+    });
+
+    it('blocks Org A user from selecting Org B voyage movements', async () => {
+      const { data } = await clientA.from('voyage_movements').select('*').eq('id', voyageMovementB.id);
+      expect(data).toEqual([]);
+    });
+
+    it('blocks Org A user from updating Org B voyage movements', async () => {
+      const { data } = await clientA.from('voyage_movements').update({ status: 'completed' }).eq('id', voyageMovementB.id).select();
+      expect(data).toEqual([]);
+    });
+
+    it('blocks Org A user from deleting Org B voyage movements', async () => {
+      const { data } = await clientA.from('voyage_movements').delete().eq('id', voyageMovementB.id).select();
+      expect(data).toEqual([]);
+    });
+  });
 });
+
