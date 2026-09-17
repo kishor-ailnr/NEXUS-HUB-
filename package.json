@@ -1,0 +1,19 @@
+{
+  "name": "nexus-ways",
+  "version": "1.0.0",
+  "private": true,
+  "description": "NEXUS WAYS - Next-Generation Multimodal Supply Chain Platform",
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "scripts": {
+    "dev": "concurrently -n \"api,web\" -c \"cyan,magenta\" \"npm run dev --workspace=@nexus-ways/api\" \"npm run dev --workspace=@nexus-ways/web\"",
+    "build": "npm run build --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present",
+    "lint": "npm run lint --workspaces --if-present"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}
