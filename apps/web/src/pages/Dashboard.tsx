@@ -498,12 +498,15 @@ export const Dashboard: React.FC = () => {
       <header className="border-b border-slate-800 bg-slate-900/80 backdrop-blur-md sticky top-0 z-50">
         <div className="max-w-[1920px] mx-auto px-4 h-14 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center text-white font-bold shadow-md shadow-blue-500/20">
-                <ModeIcon className="w-5 h-5" />
-              </div>
+            <div className="flex items-center gap-2.5">
+              <img
+                src="/images/nexus_ways_emblem.png"
+                alt="NEXUS WAYS Logo"
+                className="h-8 w-auto object-contain select-none"
+              />
               <span className="font-bold text-base tracking-tight text-white flex items-center gap-1.5">
                 NEXUS WAYS
+
                 <Badge
                   variant="outline"
                   className="bg-blue-500/10 text-blue-400 border-blue-500/30 text-[10px] uppercase font-mono tracking-wider ml-1"

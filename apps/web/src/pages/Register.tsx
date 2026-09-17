@@ -97,9 +97,18 @@ export const Register: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-slate-50 relative flex flex-col justify-between p-4 sm:p-6">
-      <div className="w-full">
+      <div className="w-full max-w-xl mx-auto flex items-center justify-between">
         <BackButton fallbackTo="/" />
+        <div className="flex items-center gap-2">
+          <img
+            src="/images/nexus_ways_emblem.png"
+            alt="NEXUS WAYS Logo"
+            className="h-8 w-auto object-contain select-none"
+          />
+          <span className="font-bold text-navy text-base tracking-tight">NEXUS WAYS</span>
+        </div>
       </div>
+
 
       <div className="flex-1 flex flex-col items-center justify-center my-6">
         <Card className="w-full max-w-xl border-slate-200 shadow-xl">

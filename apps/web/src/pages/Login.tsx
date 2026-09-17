@@ -136,12 +136,15 @@ export const Login: React.FC = () => {
         <div className="text-white">
           <BackButton fallbackTo="/" />
         </div>
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-sky-400 via-blue-500 to-indigo-600 flex items-center justify-center font-black text-lg text-white shadow-lg border border-white/30 select-none">
-            N
-          </div>
+        <div className="flex items-center gap-2.5">
+          <img
+            src="/images/nexus_ways_emblem.png"
+            alt="NEXUS WAYS Logo"
+            className="h-9 w-auto object-contain drop-shadow-md select-none"
+          />
           <span className="font-black text-lg tracking-tight text-white">NEXUS WAYS</span>
         </div>
+
       </div>
 
       {/* Central Glassmorphic Card */}

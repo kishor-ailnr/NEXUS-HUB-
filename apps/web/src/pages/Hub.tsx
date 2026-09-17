@@ -116,10 +116,12 @@ export const Hub: React.FC = () => {
       {/* Top Header */}
       <header className="relative z-10 w-full max-w-7xl mx-auto px-4 sm:px-6 pt-5 sm:pt-7 flex items-center justify-between">
         {/* Left: 3D Faceted Logo & Platform Identity */}
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-sky-400 via-blue-500 to-indigo-600 flex items-center justify-center font-black text-2xl text-white shadow-xl shadow-sky-500/30 border border-white/40 select-none">
-            N
-          </div>
+        <div className="flex items-center gap-3.5">
+          <img
+            src="/images/nexus_ways_emblem.png"
+            alt="NEXUS WAYS Logo"
+            className="h-12 sm:h-14 w-auto object-contain drop-shadow-xl select-none"
+          />
           <div>
             <div className="font-black text-xl sm:text-2xl tracking-tight text-white leading-none drop-shadow-md">
               NEXUS WAYS
@@ -129,6 +131,7 @@ export const Hub: React.FC = () => {
             </div>
           </div>
         </div>
+
 
         {/* Right: Tagline */}
         <div className="hidden lg:flex items-center gap-3 text-xs sm:text-sm font-medium text-slate-100/90 tracking-wide drop-shadow-sm">
