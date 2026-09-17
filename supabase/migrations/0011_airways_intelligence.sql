@@ -62,7 +62,7 @@ create policy "Users can view crew flight scores for their org"
     exists (
       select 1 from flight_movements fm
       where fm.id = crew_flight_scores.movement_id
-      and fm.org_id = auth.jwt() ->> 'orgId'::uuid
+      and fm.org_id = public.get_auth_org_id()
     )
   );
 
@@ -72,7 +72,7 @@ create policy "Users can manage crew flight scores for their org"
     exists (
       select 1 from flight_movements fm
       where fm.id = crew_flight_scores.movement_id
-      and fm.org_id = auth.jwt() ->> 'orgId'::uuid
+      and fm.org_id = public.get_auth_org_id()
     )
   );
 
@@ -83,25 +83,27 @@ create policy "Users can view flight duty logs for their org"
     exists (
       select 1 from flight_crew fc
       where fc.id = flight_duty_logs.pilot_id
-      and fc.org_id = auth.jwt() ->> 'orgId'::uuid
+      and fc.org_id = public.get_auth_org_id()
     )
   );
 
+-- Policies for flight_duty_logs
 create policy "Users can manage flight duty logs for their org"
   on flight_duty_logs for all
   using (
     exists (
       select 1 from flight_crew fc
       where fc.id = flight_duty_logs.pilot_id
-      and fc.org_id = auth.jwt() ->> 'orgId'::uuid
+      and fc.org_id = public.get_auth_org_id()
     )
   );
 
 -- Policies for flight_movement_reports
 create policy "Users can view flight movement reports for their org"
   on flight_movement_reports for select
-  using (org_id = auth.jwt() ->> 'orgId'::uuid);
+  using (org_id = public.get_auth_org_id());
 
 create policy "Users can manage flight movement reports for their org"
   on flight_movement_reports for all
-  using (org_id = auth.jwt() ->> 'orgId'::uuid);
+  using (org_id = public.get_auth_org_id());
+
