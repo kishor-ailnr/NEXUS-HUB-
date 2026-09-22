@@ -7,6 +7,7 @@ import { SeawaysMap } from '../SeawaysMap';
 import { VoyageMovementDetailsPanel } from '../VoyageMovementDetailsPanel';
 import { CreateVoyageMovementModal } from '../CreateVoyageMovementModal';
 import { DriverDashboard } from '../../pages/DriverDashboard';
+import { seawaysService } from '../../services/seaways';
 import {
   Port,
   Vessel,
@@ -297,6 +298,119 @@ describe('Seaways Frontend Modules & Components', () => {
 
       expect(screen.getByText('Malacca Strait Escort Convoy')).toBeInTheDocument();
       expect(screen.getByText(/1 Vessels/i)).toBeInTheDocument();
+    });
+
+    it('renders Add Sea Crew button for manager, submits valid data, and calls createSeaCrew with correct payload', async () => {
+      const onRefresh = vi.fn();
+      render(
+        <SeawaysSidebar
+          voyages={mockVoyages}
+          ports={mockPorts}
+          vessels={mockVessels}
+          crew={mockSeaCrew}
+          movements={mockMovements}
+          convoys={mockConvoys}
+          selectedVesselId={null}
+          onSelectVessel={vi.fn()}
+          selectedMovementId={null}
+          onSelectMovement={vi.fn()}
+          userRole="manager"
+          onRefresh={onRefresh}
+          onOpenCreateMovement={vi.fn()}
+        />,
+      );
+
+      // Open crew tab
+      const crewTabBtn = screen.getByRole('button', { name: /Crew/i });
+      fireEvent.click(crewTabBtn);
+
+      const addCrewBtn = screen.getByTestId('add-crew-button-tab');
+      expect(addCrewBtn).toBeInTheDocument();
+      fireEvent.click(addCrewBtn);
+
+      expect(screen.getByText('Register Sea Crew Member')).toBeInTheDocument();
+
+      fireEvent.change(screen.getByTestId('crew-name-input'), { target: { value: 'Capt. Rajesh Varma' } });
+      fireEvent.change(screen.getByTestId('crew-email-input'), { target: { value: 'rajesh.varma@seaways.com' } });
+      fireEvent.change(screen.getByTestId('crew-cert-input'), { target: { value: 'IND-COC-M-7788' } });
+      fireEvent.change(screen.getByTestId('crew-phone-input'), { target: { value: '+91 97654 32100' } });
+      fireEvent.change(screen.getByTestId('crew-role-select'), { target: { value: 'master' } });
+      fireEvent.change(screen.getByTestId('crew-password-input'), { target: { value: 'Varma@Sea2026' } });
+
+      fireEvent.click(screen.getByTestId('submit-crew-button'));
+
+      await waitFor(() => {
+        expect(seawaysService.createSeaCrew).toHaveBeenCalledWith({
+          fullName: 'Capt. Rajesh Varma',
+          email: 'rajesh.varma@seaways.com',
+          certificateNumber: 'IND-COC-M-7788',
+          phone: '+91 97654 32100',
+          crewRole: 'master',
+          password: 'Varma@Sea2026',
+        });
+        expect(onRefresh).toHaveBeenCalled();
+      });
+    });
+
+    it('immediately reflects new sea crew member in CreateVoyageMovementModal master assignment dropdown without reload', () => {
+      const updatedCrew: SeaCrew[] = [
+        ...mockSeaCrew,
+        {
+          id: 'crew-new-99',
+          org_id: 'org-sea-1',
+          user_id: 'user-new-99',
+          certificate_number: 'IND-COC-M-7788',
+          crew_role: 'master',
+          status: 'available',
+          created_at: new Date().toISOString(),
+          user: { id: 'user-new-99', email: 'rajesh.varma@seaways.com', full_name: 'Capt. Rajesh Varma' },
+        },
+      ];
+
+      render(
+        <CreateVoyageMovementModal
+          isOpen={true}
+          onClose={vi.fn()}
+          ports={mockPorts}
+          vessels={mockVessels}
+          crew={updatedCrew}
+          voyages={mockVoyages}
+          onMovementCreated={vi.fn()}
+        />,
+      );
+
+      expect(screen.getByText(/Capt. Rajesh Varma \(master\)/i)).toBeInTheDocument();
+    });
+
+    it('guards Add Sea Crew and Add Vessel buttons: driver/master-role user cannot see them', () => {
+      render(
+        <SeawaysSidebar
+          voyages={mockVoyages}
+          ports={mockPorts}
+          vessels={mockVessels}
+          crew={mockSeaCrew}
+          movements={mockMovements}
+          convoys={mockConvoys}
+          selectedVesselId={null}
+          onSelectVessel={vi.fn()}
+          selectedMovementId={null}
+          onSelectMovement={vi.fn()}
+          userRole="driver"
+          onRefresh={vi.fn()}
+          onOpenCreateMovement={vi.fn()}
+        />,
+      );
+
+      // In vessels tab
+      const vesselsTabBtn = screen.getByRole('button', { name: /Vessels/i });
+      fireEvent.click(vesselsTabBtn);
+      expect(screen.queryByTestId('add-crew-button')).not.toBeInTheDocument();
+      expect(screen.queryByTestId('add-vessel-button')).not.toBeInTheDocument();
+
+      // In crew tab
+      const crewTabBtn = screen.getByRole('button', { name: /Crew/i });
+      fireEvent.click(crewTabBtn);
+      expect(screen.queryByTestId('add-crew-button-tab')).not.toBeInTheDocument();
     });
   });
 

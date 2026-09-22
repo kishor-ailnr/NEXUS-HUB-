@@ -70,7 +70,7 @@ export class SeaCrewService {
       }
       userId = existingUser.id;
     } else {
-      const defaultPassword = 'Master@Nexus123';
+      const defaultPassword = dto.password || 'Master@Nexus123';
 
       try {
         const { data: authUser, error: authError } =

@@ -30,17 +30,49 @@ export const authService = {
     const { access_token, refresh_token } = authData.session;
 
     // Exchange session with API, passing division mode
-    const res = await apiFetch<{ user: UserProfile }>('/auth/session', {
-      method: 'POST',
-      headers: mode ? { 'X-NW-Mode': mode } : undefined,
-      data: {
-        access_token,
-        refresh_token,
-        mode,
-      },
-    });
+    try {
+      const res = await apiFetch<{ user: UserProfile }>('/auth/session', {
+        method: 'POST',
+        headers: mode ? { 'X-NW-Mode': mode } : undefined,
+        data: {
+          access_token,
+          refresh_token,
+          mode,
+        },
+      });
+      return res.user;
+    } catch (apiErr) {
+      console.warn('API session exchange failed, falling back to direct Supabase profile:', apiErr);
+      const { data: dbUser, error: userErr } = await supabase
+        .from('users')
+        .select('id, email, full_name, role, org_id, organization:organizations(*)')
+        .eq('id', authData.user.id)
+        .single();
 
-    return res.user;
+      if (userErr || !dbUser) {
+        throw new Error(userErr?.message || 'Could not load user profile from database');
+      }
+
+      const org = dbUser.organization as any;
+      return {
+        id: dbUser.id,
+        email: dbUser.email,
+        fullName: dbUser.full_name,
+        role: dbUser.role,
+        orgId: dbUser.org_id,
+        organization: {
+          id: org.id,
+          name: org.name,
+          mode: org.mode || mode || 'roadways',
+          country: org.country,
+          state: org.state,
+          district: org.district,
+          address: org.address,
+          latitude: org.latitude,
+          longitude: org.longitude,
+        },
+      };
+    }
   },
 
   /**
@@ -70,20 +102,58 @@ export const authService = {
    * Exchange Supabase access and refresh token with backend
    */
   async exchangeSession(accessToken: string, refreshToken: string, mode?: OrgMode): Promise<UserProfile> {
-    const res = await apiFetch<{ user: UserProfile }>('/auth/session', {
-      method: 'POST',
-      headers: mode ? { 'X-NW-Mode': mode } : undefined,
-      data: {
-        access_token: accessToken,
-        refresh_token: refreshToken,
-        mode,
-      },
-    });
-    return res.user;
+    try {
+      const res = await apiFetch<{ user: UserProfile }>('/auth/session', {
+        method: 'POST',
+        headers: mode ? { 'X-NW-Mode': mode } : undefined,
+        data: {
+          access_token: accessToken,
+          refresh_token: refreshToken,
+          mode,
+        },
+      });
+      return res.user;
+    } catch (apiErr) {
+      console.warn('API exchangeSession failed, falling back to direct Supabase profile:', apiErr);
+      const { data: authData } = await supabase.auth.getUser(accessToken);
+      if (!authData?.user) {
+        throw new Error('Unable to authenticate with Supabase');
+      }
+
+      const { data: dbUser, error: userErr } = await supabase
+        .from('users')
+        .select('id, email, full_name, role, org_id, organization:organizations(*)')
+        .eq('id', authData.user.id)
+        .single();
+
+      if (userErr || !dbUser) {
+        throw new Error(userErr?.message || 'Could not load user profile from database');
+      }
+
+      const org = dbUser.organization as any;
+      return {
+        id: dbUser.id,
+        email: dbUser.email,
+        fullName: dbUser.full_name,
+        role: dbUser.role,
+        orgId: dbUser.org_id,
+        organization: {
+          id: org.id,
+          name: org.name,
+          mode: org.mode || mode || 'roadways',
+          country: org.country,
+          state: org.state,
+          district: org.district,
+          address: org.address,
+          latitude: org.latitude,
+          longitude: org.longitude,
+        },
+      };
+    }
   },
 
   /**
-   * Fetch current authenticated user profile using cookie.
+   * Fetch current authenticated user profile using cookie or active Supabase session.
    * Gracefully attempts token refresh if initial access token expired.
    */
   async getMe(): Promise<UserProfile | null> {
@@ -93,6 +163,42 @@ export const authService = {
       });
       return res.user;
     } catch {
+      // Attempt Supabase active session fallback
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session?.user) {
+          const { data: dbUser } = await supabase
+            .from('users')
+            .select('id, email, full_name, role, org_id, organization:organizations(*)')
+            .eq('id', session.user.id)
+            .maybeSingle();
+
+          if (dbUser) {
+            const org = dbUser.organization as any;
+            return {
+              id: dbUser.id,
+              email: dbUser.email,
+              fullName: dbUser.full_name,
+              role: dbUser.role,
+              orgId: dbUser.org_id,
+              organization: {
+                id: org.id,
+                name: org.name,
+                mode: org.mode || 'roadways',
+                country: org.country,
+                state: org.state,
+                district: org.district,
+                address: org.address,
+                latitude: org.latitude,
+                longitude: org.longitude,
+              },
+            };
+          }
+        }
+      } catch (err) {
+        console.warn('Direct Supabase session restore failed:', err);
+      }
+
       // Attempt token refresh if initial getMe returned 401
       try {
         const refreshRes = await this.refreshSession();
@@ -101,6 +207,7 @@ export const authService = {
         return null;
       }
     }
+    return null;
   },
 
   /**

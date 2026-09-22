@@ -421,6 +421,10 @@ export const Dashboard: React.FC = () => {
     toast.success(`Vehicle ${newVehicle.registration_number} added successfully.`);
   };
 
+  const handleDriverCreated = (newDriver: Driver) => {
+    setDrivers((prev) => [newDriver, ...prev.filter((d) => d.id !== newDriver.id)]);
+  };
+
   const handleOpenTripModalForVehicle = (vehicle: Vehicle) => {
     setPreselectedVehicleForTrip(vehicle);
     setIsTripModalOpen(true);
@@ -596,6 +600,7 @@ export const Dashboard: React.FC = () => {
                   selectedVehicleId={selectedVehicleId}
                   onSelectVehicle={handleSelectVehicle}
                   onVehicleCreated={handleVehicleCreated}
+                  onDriverCreated={handleDriverCreated}
                   onCreateTrip={handleOpenTripModalForVehicle}
                   currentUserRole={user?.role}
                 />

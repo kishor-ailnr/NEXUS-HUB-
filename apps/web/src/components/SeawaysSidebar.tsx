@@ -26,6 +26,9 @@ import {
   Package,
   Layers,
   Users,
+  UserPlus,
+  Eye,
+  EyeOff,
 } from 'lucide-react';
 import { Label } from './ui/label';
 import { toast } from 'sonner';
@@ -86,7 +89,11 @@ export const SeawaysSidebar: React.FC<SeawaysSidebarProps> = ({
   const [newCrewName, setNewCrewName] = useState('');
   const [newCrewEmail, setNewCrewEmail] = useState('');
   const [newCrewCert, setNewCrewCert] = useState('');
+  const [newCrewPhone, setNewCrewPhone] = useState('');
   const [newCrewRole, setNewCrewRole] = useState<'master' | 'officer' | 'rating'>('master');
+  const [newCrewPassword, setNewCrewPassword] = useState('');
+  const [showCrewPassword, setShowCrewPassword] = useState(false);
+  const [isSubmittingCrew, setIsSubmittingCrew] = useState(false);
 
   const [newVoyageNumber, setNewVoyageNumber] = useState('');
   const [newVoyageOriginId, setNewVoyageOriginId] = useState('');
@@ -153,20 +160,27 @@ export const SeawaysSidebar: React.FC<SeawaysSidebarProps> = ({
       return;
     }
     try {
+      setIsSubmittingCrew(true);
       await seawaysService.createSeaCrew({
         fullName: newCrewName.trim(),
         email: newCrewEmail.trim(),
-        certificateNumber: newCrewCert.trim(),
+        certificateNumber: newCrewCert.trim().toUpperCase(),
+        phone: newCrewPhone.trim() || undefined,
         crewRole: newCrewRole,
+        password: newCrewPassword.trim() || undefined,
       });
-      toast.success('Sea crew member created successfully');
+      toast.success('Crew member registered successfully');
       setIsAddCrewOpen(false);
       setNewCrewName('');
       setNewCrewEmail('');
       setNewCrewCert('');
+      setNewCrewPhone('');
+      setNewCrewPassword('');
       onRefresh();
     } catch (err: any) {
-      toast.error(err.message || 'Failed to create sea crew');
+      toast.error(err.message || 'Failed to create crew member');
+    } finally {
+      setIsSubmittingCrew(false);
     }
   };
 
@@ -453,15 +467,28 @@ export const SeawaysSidebar: React.FC<SeawaysSidebarProps> = ({
         {activeTab === 'vessels' && (
           <div className="space-y-2">
             {isManager && (
-              <Button
-                variant="outline"
-                size="sm"
-                className="w-full border-dashed border-slate-700 text-slate-300 hover:text-white hover:bg-slate-800/60 text-xs h-8 flex items-center gap-1.5 mb-2"
-                onClick={() => setIsAddVesselOpen(true)}
-              >
-                <Plus className="w-3.5 h-3.5" />
-                Add Vessel
-              </Button>
+              <div className="flex gap-1.5 mb-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="flex-1 border-dashed border-slate-700 text-slate-300 hover:text-white hover:bg-slate-800/60 text-xs h-8 flex items-center justify-center gap-1.5"
+                  onClick={() => setIsAddVesselOpen(true)}
+                  data-testid="add-vessel-button"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  Add Vessel
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="flex-1 border-dashed border-cyan-700/60 text-cyan-300 hover:text-white hover:bg-cyan-950/20 text-xs h-8 flex items-center justify-center gap-1.5"
+                  onClick={() => setIsAddCrewOpen(true)}
+                  data-testid="add-crew-button"
+                >
+                  <UserPlus className="w-3.5 h-3.5" />
+                  Add Sea Crew
+                </Button>
+              </div>
             )}
 
             {filteredVessels.map((v) => (
@@ -590,10 +617,11 @@ export const SeawaysSidebar: React.FC<SeawaysSidebarProps> = ({
               <Button
                 variant="outline"
                 size="sm"
-                className="w-full border-dashed border-slate-700 text-slate-300 hover:text-white hover:bg-slate-800/60 text-xs h-8 flex items-center gap-1.5 mb-2"
+                className="w-full border-dashed border-cyan-700/60 text-cyan-300 hover:text-white hover:bg-cyan-950/20 text-xs h-8 flex items-center gap-1.5 mb-2"
                 onClick={() => setIsAddCrewOpen(true)}
+                data-testid="add-crew-button-tab"
               >
-                <Plus className="w-3.5 h-3.5" />
+                <UserPlus className="w-3.5 h-3.5" />
                 Add Sea Crew Member
               </Button>
             )}
@@ -765,24 +793,25 @@ export const SeawaysSidebar: React.FC<SeawaysSidebarProps> = ({
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
           <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 w-full max-w-md space-y-4 shadow-2xl">
             <div className="flex items-center justify-between">
-              <h3 className="font-semibold text-slate-100 text-sm">Add Sea Crew Member</h3>
+              <h3 className="font-semibold text-slate-100 text-sm">Register Sea Crew Member</h3>
               <button onClick={() => setIsAddCrewOpen(false)} className="text-slate-400 hover:text-white">
                 <X className="w-4 h-4" />
               </button>
             </div>
             <form onSubmit={handleCreateCrew} className="space-y-3">
               <div>
-                <Label className="text-xs text-slate-300">Full Name</Label>
+                <Label className="text-xs text-slate-300">Full Name *</Label>
                 <Input
                   required
                   placeholder="e.g. Capt. Vikram Batra"
                   className="h-8 bg-slate-950 border-slate-700 text-xs text-slate-100"
                   value={newCrewName}
                   onChange={(e) => setNewCrewName(e.target.value)}
+                  data-testid="crew-name-input"
                 />
               </div>
               <div>
-                <Label className="text-xs text-slate-300">Email Address</Label>
+                <Label className="text-xs text-slate-300">Email Address *</Label>
                 <Input
                   type="email"
                   required
@@ -790,29 +819,63 @@ export const SeawaysSidebar: React.FC<SeawaysSidebarProps> = ({
                   className="h-8 bg-slate-950 border-slate-700 text-xs text-slate-100"
                   value={newCrewEmail}
                   onChange={(e) => setNewCrewEmail(e.target.value)}
+                  data-testid="crew-email-input"
                 />
               </div>
               <div>
-                <Label className="text-xs text-slate-300">Certificate of Competency (CoC) Number</Label>
+                <Label className="text-xs text-slate-300">Certificate of Competency (CoC) Number *</Label>
                 <Input
                   required
                   placeholder="e.g. IND-COC-M-98124"
-                  className="h-8 bg-slate-950 border-slate-700 text-xs text-slate-100"
+                  className="h-8 bg-slate-950 border-slate-700 text-xs text-slate-100 uppercase font-mono"
                   value={newCrewCert}
                   onChange={(e) => setNewCrewCert(e.target.value)}
+                  data-testid="crew-cert-input"
                 />
               </div>
               <div>
-                <Label className="text-xs text-slate-300">Role</Label>
+                <Label className="text-xs text-slate-300">Phone (Optional)</Label>
+                <Input
+                  type="tel"
+                  placeholder="e.g. +91 98765 43210"
+                  className="h-8 bg-slate-950 border-slate-700 text-xs text-slate-100"
+                  value={newCrewPhone}
+                  onChange={(e) => setNewCrewPhone(e.target.value)}
+                  data-testid="crew-phone-input"
+                />
+              </div>
+              <div>
+                <Label className="text-xs text-slate-300">Crew Role</Label>
                 <select
                   className="w-full h-8 bg-slate-950 border border-slate-700 rounded-md text-xs text-slate-100 px-2"
                   value={newCrewRole}
                   onChange={(e) => setNewCrewRole(e.target.value as any)}
+                  data-testid="crew-role-select"
                 >
                   <option value="master">Master / Captain</option>
                   <option value="officer">Chief Officer / Navigation Officer</option>
                   <option value="rating">Rating / Deck Hand</option>
                 </select>
+              </div>
+              <div>
+                <Label className="text-xs text-slate-300">Initial Password</Label>
+                <div className="relative">
+                  <Input
+                    type={showCrewPassword ? 'text' : 'password'}
+                    placeholder="Set initial password (default: Master@Nexus123)"
+                    className="h-8 bg-slate-950 border-slate-700 text-xs text-slate-100 pr-8"
+                    value={newCrewPassword}
+                    onChange={(e) => setNewCrewPassword(e.target.value)}
+                    data-testid="crew-password-input"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowCrewPassword(!showCrewPassword)}
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-200"
+                  >
+                    {showCrewPassword ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                  </button>
+                </div>
               </div>
               <div className="flex justify-end gap-2 pt-2">
                 <Button
@@ -824,8 +887,14 @@ export const SeawaysSidebar: React.FC<SeawaysSidebarProps> = ({
                 >
                   Cancel
                 </Button>
-                <Button type="submit" size="sm" className="bg-blue-600 hover:bg-blue-500 text-xs">
-                  Save Crew Member
+                <Button
+                  type="submit"
+                  size="sm"
+                  disabled={isSubmittingCrew}
+                  className="bg-cyan-600 hover:bg-cyan-500 text-white text-xs"
+                  data-testid="submit-crew-button"
+                >
+                  {isSubmittingCrew ? 'Registering...' : 'Save Crew Member'}
                 </Button>
               </div>
             </form>

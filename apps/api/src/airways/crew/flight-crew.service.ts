@@ -70,7 +70,7 @@ export class FlightCrewService {
       }
       userId = existingUser.id;
     } else {
-      const defaultPassword = 'Pilot@Nexus123';
+      const defaultPassword = dto.password || 'Pilot@Nexus123';
 
       try {
         const { data: authUser, error: authError } =

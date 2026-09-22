@@ -25,6 +25,9 @@ import {
   Play,
   CheckCircle2,
   X,
+  UserPlus,
+  Eye,
+  EyeOff,
 } from 'lucide-react';
 import { Label } from './ui/label';
 import { toast } from 'sonner';
@@ -94,6 +97,9 @@ export const RailwaysSidebar: React.FC<RailwaysSidebarProps> = ({
   const [newPilotEmail, setNewPilotEmail] = useState('');
   const [newPilotLicense, setNewPilotLicense] = useState('');
   const [newPilotPhone, setNewPilotPhone] = useState('');
+  const [newPilotPassword, setNewPilotPassword] = useState('');
+  const [showPilotPassword, setShowPilotPassword] = useState(false);
+  const [isSubmittingPilot, setIsSubmittingPilot] = useState(false);
 
   const isManager = userRole === 'manager';
 
@@ -185,12 +191,18 @@ export const RailwaysSidebar: React.FC<RailwaysSidebarProps> = ({
 
   const handleCreatePilot = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!newPilotName.trim() || !newPilotEmail.trim() || !newPilotLicense.trim()) {
+      toast.error('Name, email, and license number are required');
+      return;
+    }
     try {
+      setIsSubmittingPilot(true);
       await railwaysService.createLocoPilot({
-        fullName: newPilotName,
-        email: newPilotEmail,
-        licenseNumber: newPilotLicense,
-        phone: newPilotPhone || undefined,
+        fullName: newPilotName.trim(),
+        email: newPilotEmail.trim(),
+        licenseNumber: newPilotLicense.trim().toUpperCase(),
+        phone: newPilotPhone.trim() || undefined,
+        password: newPilotPassword.trim() || undefined,
       });
       toast.success(`Loco Pilot ${newPilotName} registered`);
       setIsAddPilotOpen(false);
@@ -198,9 +210,12 @@ export const RailwaysSidebar: React.FC<RailwaysSidebarProps> = ({
       setNewPilotEmail('');
       setNewPilotLicense('');
       setNewPilotPhone('');
+      setNewPilotPassword('');
       onRefresh();
     } catch (err: any) {
       toast.error(err.message || 'Failed to register loco pilot');
+    } finally {
+      setIsSubmittingPilot(false);
     }
   };
 
@@ -485,15 +500,28 @@ export const RailwaysSidebar: React.FC<RailwaysSidebarProps> = ({
         {activeTab === 'locos' && (
           <div className="space-y-2">
             {isManager && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setIsAddLocoOpen(true)}
-                className="w-full justify-center gap-2 border-dashed border-slate-700 hover:border-slate-500 bg-slate-950/40 text-slate-300 hover:text-white h-9 text-xs mb-2"
-              >
-                <Plus className="w-3.5 h-3.5" />
-                Register Locomotive
-              </Button>
+              <div className="flex gap-1.5 mb-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setIsAddLocoOpen(true)}
+                  className="flex-1 justify-center gap-1.5 border-dashed border-slate-700 hover:border-slate-500 bg-slate-950/40 text-slate-300 hover:text-white h-9 text-xs"
+                  data-testid="add-loco-button"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  Add Locomotive
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setIsAddPilotOpen(true)}
+                  className="flex-1 justify-center gap-1.5 border-dashed border-emerald-700/60 hover:border-emerald-500 bg-emerald-950/20 text-emerald-300 hover:text-white h-9 text-xs"
+                  data-testid="add-pilot-button"
+                >
+                  <UserPlus className="w-3.5 h-3.5" />
+                  Add Loco Pilot
+                </Button>
+              </div>
             )}
 
             {locomotives.map((loco) => (
@@ -559,9 +587,10 @@ export const RailwaysSidebar: React.FC<RailwaysSidebarProps> = ({
                 variant="outline"
                 size="sm"
                 onClick={() => setIsAddPilotOpen(true)}
-                className="w-full justify-center gap-2 border-dashed border-slate-700 hover:border-slate-500 bg-slate-950/40 text-slate-300 hover:text-white h-9 text-xs mb-2"
+                className="w-full justify-center gap-2 border-dashed border-emerald-700/60 hover:border-emerald-500 bg-emerald-950/20 text-emerald-300 hover:text-white h-9 text-xs mb-2"
+                data-testid="add-pilot-button-tab"
               >
-                <Plus className="w-3.5 h-3.5" />
+                <UserPlus className="w-3.5 h-3.5" />
                 Register Loco Pilot
               </Button>
             )}
@@ -849,17 +878,18 @@ export const RailwaysSidebar: React.FC<RailwaysSidebarProps> = ({
             </div>
             <form onSubmit={handleCreatePilot} className="p-4 space-y-4 text-xs">
               <div className="space-y-1.5">
-                <Label>Full Name</Label>
+                <Label>Full Name *</Label>
                 <Input
                   required
                   value={newPilotName}
                   onChange={(e) => setNewPilotName(e.target.value)}
                   placeholder="e.g. Ramesh Chandra"
                   className="bg-slate-950 border-slate-800 text-white"
+                  data-testid="pilot-name-input"
                 />
               </div>
               <div className="space-y-1.5">
-                <Label>Email Address</Label>
+                <Label>Email Address *</Label>
                 <Input
                   type="email"
                   required
@@ -867,33 +897,62 @@ export const RailwaysSidebar: React.FC<RailwaysSidebarProps> = ({
                   onChange={(e) => setNewPilotEmail(e.target.value)}
                   placeholder="e.g. ramesh.pilot@railways.in"
                   className="bg-slate-950 border-slate-800 text-white"
+                  data-testid="pilot-email-input"
                 />
               </div>
               <div className="space-y-1.5">
-                <Label>Loco Pilot License Number</Label>
+                <Label>Loco Pilot License Number *</Label>
                 <Input
                   required
                   value={newPilotLicense}
                   onChange={(e) => setNewPilotLicense(e.target.value)}
                   placeholder="e.g. IR-LP-88421"
-                  className="bg-slate-950 border-slate-800 text-white"
+                  className="bg-slate-950 border-slate-800 text-white uppercase font-mono"
+                  data-testid="pilot-license-input"
                 />
               </div>
               <div className="space-y-1.5">
                 <Label>Phone (Optional)</Label>
                 <Input
+                  type="tel"
                   value={newPilotPhone}
                   onChange={(e) => setNewPilotPhone(e.target.value)}
                   placeholder="e.g. +91 98765 43210"
                   className="bg-slate-950 border-slate-800 text-white"
+                  data-testid="pilot-phone-input"
                 />
+              </div>
+              <div className="space-y-1.5">
+                <Label>Initial Password</Label>
+                <div className="relative">
+                  <Input
+                    type={showPilotPassword ? 'text' : 'password'}
+                    value={newPilotPassword}
+                    onChange={(e) => setNewPilotPassword(e.target.value)}
+                    placeholder="Set initial password (default: Pilot@Nexus123)"
+                    className="bg-slate-950 border-slate-800 text-white pr-9"
+                    data-testid="pilot-password-input"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPilotPassword(!showPilotPassword)}
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-200"
+                  >
+                    {showPilotPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
               </div>
               <div className="flex justify-end gap-2 pt-2 border-t border-slate-800">
                 <Button type="button" variant="outline" onClick={() => setIsAddPilotOpen(false)}>
                   Cancel
                 </Button>
-                <Button type="submit" className="bg-emerald-600 hover:bg-emerald-500 text-white">
-                  Register Pilot
+                <Button
+                  type="submit"
+                  disabled={isSubmittingPilot}
+                  className="bg-emerald-600 hover:bg-emerald-500 text-white"
+                  data-testid="submit-pilot-button"
+                >
+                  {isSubmittingPilot ? 'Registering...' : 'Register Pilot'}
                 </Button>
               </div>
             </form>

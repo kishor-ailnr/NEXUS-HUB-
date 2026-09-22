@@ -12,8 +12,18 @@ async function bootstrap() {
   const configService = app.get(ConfigService);
 
   const port = configService.get<number>('PORT') || 4000;
-  const rawOrigins = configService.get<string>('FRONTEND_ORIGIN') || 'http://localhost:5173,http://localhost:3000';
-  const allowedOrigins = rawOrigins.split(',').map((o) => o.trim()).filter(Boolean);
+  const defaultOrigins = [
+    'https://smart-supply-chain-v3.web.app',
+    'https://smart-supply-chain-v3.firebaseapp.com',
+    'http://localhost:5173',
+    'http://localhost:3000',
+    'http://127.0.0.1:5173',
+    'http://127.0.0.1:3000',
+  ];
+  const envOrigins = configService.get<string>('FRONTEND_ORIGIN')
+    ? configService.get<string>('FRONTEND_ORIGIN')!.split(',').map((o) => o.trim()).filter(Boolean)
+    : [];
+  const allowedOrigins = Array.from(new Set([...defaultOrigins, ...envOrigins]));
 
   app.use(cookieParser());
 
@@ -21,7 +31,12 @@ async function bootstrap() {
     origin: (origin, callback) => {
       // Allow requests with no origin (e.g. mobile apps, curl, server-to-server)
       if (!origin) return callback(null, true);
-      if (allowedOrigins.includes('*') || allowedOrigins.includes(origin)) {
+      if (
+        allowedOrigins.includes('*') ||
+        allowedOrigins.includes(origin) ||
+        origin.endsWith('.web.app') ||
+        origin.endsWith('.firebaseapp.com')
+      ) {
         return callback(null, true);
       }
       return callback(new Error(`Origin ${origin} not allowed by CORS`));

@@ -1,58 +1,23 @@
 import {
   Trip,
   CreateTripDto,
-  UpdateTripStatusDto,
   AddCheckpointDto,
   SavedRoute,
   TripEtaResponse,
 } from '@nexus-ways/shared';
-
-const BASE_URL = '/trips';
+import { apiFetch } from '../lib/api';
 
 export const tripsService = {
   async getTrips(): Promise<Trip[]> {
-    const response = await fetch(BASE_URL, {
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      credentials: 'include',
-    });
-
-    if (!response.ok) {
-      throw new Error(`Failed to fetch trips: ${response.statusText}`);
-    }
-
-    return response.json();
+    return apiFetch<Trip[]>('/trips', { method: 'GET' });
   },
 
   async getTrip(id: string): Promise<Trip> {
-    const response = await fetch(`${BASE_URL}/${id}`, {
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      credentials: 'include',
-    });
-
-    if (!response.ok) {
-      throw new Error(`Failed to fetch trip: ${response.statusText}`);
-    }
-
-    return response.json();
+    return apiFetch<Trip>(`/trips/${id}`, { method: 'GET' });
   },
 
   async getTripEta(id: string): Promise<TripEtaResponse> {
-    const response = await fetch(`${BASE_URL}/${id}/eta`, {
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      credentials: 'include',
-    });
-
-    if (!response.ok) {
-      throw new Error(`Failed to fetch ETA: ${response.statusText}`);
-    }
-
-    return response.json();
+    return apiFetch<TripEtaResponse>(`/trips/${id}/eta`, { method: 'GET' });
   },
 
   async getSavedRoutes(origin?: string, destination?: string): Promise<SavedRoute[]> {
@@ -60,91 +25,39 @@ export const tripsService = {
     if (origin) params.append('origin', origin);
     if (destination) params.append('destination', destination);
 
-    const url = `${BASE_URL}/saved-routes?${params.toString()}`;
-    const response = await fetch(url, {
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      credentials: 'include',
-    });
-
-    if (!response.ok) {
-      return [];
-    }
-
-    return response.json();
+    const query = params.toString();
+    const endpoint = query ? `/trips/saved-routes?${query}` : '/trips/saved-routes';
+    return apiFetch<SavedRoute[]>(endpoint, { method: 'GET' }).catch(() => []);
   },
 
   async createTrip(dto: CreateTripDto): Promise<Trip> {
-    const response = await fetch(BASE_URL, {
+    return apiFetch<Trip>('/trips', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      credentials: 'include',
-      body: JSON.stringify(dto),
+      data: dto,
     });
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.message || `Failed to create trip: ${response.statusText}`);
-    }
-
-    return response.json();
   },
 
   async addCheckpoint(tripId: string, dto: AddCheckpointDto): Promise<Trip> {
-    const response = await fetch(`${BASE_URL}/${tripId}/checkpoints`, {
+    return apiFetch<Trip>(`/trips/${tripId}/checkpoints`, {
       method: 'PATCH',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      credentials: 'include',
-      body: JSON.stringify(dto),
+      data: dto,
     });
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.message || `Failed to add checkpoint: ${response.statusText}`);
-    }
-
-    return response.json();
   },
 
   async updateStatus(tripId: string, status: 'planned' | 'in_transit' | 'completed' | 'cancelled'): Promise<Trip> {
-    const response = await fetch(`${BASE_URL}/${tripId}/status`, {
+    return apiFetch<Trip>(`/trips/${tripId}/status`, {
       method: 'PATCH',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      credentials: 'include',
-      body: JSON.stringify({ status }),
+      data: { status },
     });
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.message || `Failed to update trip status: ${response.statusText}`);
-    }
-
-    return response.json();
   },
 
   async getTripReport(tripId: string): Promise<{ tripId: string; signedUrl: string; storagePath: string; fileSizeBytes?: number; generatedAt: string }> {
-    const response = await fetch(`${BASE_URL}/${tripId}/report`, {
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      credentials: 'include',
+    return apiFetch<{ tripId: string; signedUrl: string; storagePath: string; fileSizeBytes?: number; generatedAt: string }>(`/trips/${tripId}/report`, {
+      method: 'GET',
     });
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.message || `Failed to fetch trip report: ${response.statusText}`);
-    }
-
-    return response.json();
   },
 };
 
 export const tripsApi = tripsService;
+
 

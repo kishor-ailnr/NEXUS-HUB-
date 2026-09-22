@@ -7,6 +7,7 @@ import { AirwaysMap } from '../AirwaysMap';
 import { FlightMovementDetailsPanel } from '../FlightMovementDetailsPanel';
 import { CreateFlightMovementModal } from '../CreateFlightMovementModal';
 import { DriverDashboard } from '../../pages/DriverDashboard';
+import { airwaysService } from '../../services/airways';
 import {
   Airport,
   Aircraft,
@@ -298,6 +299,117 @@ describe('Airways Frontend Modules & Phase 7B-2 Intelligence', () => {
 
       fireEvent.change(searchInput, { target: { value: 'NX-999' } });
       expect(screen.queryByText('NX-101')).not.toBeInTheDocument();
+    });
+
+    it('renders Add Crew button for manager, submits valid data, and calls createFlightCrew with correct payload', async () => {
+      const onRefresh = vi.fn();
+      render(
+        <AirwaysSidebar
+          flights={mockFlights}
+          airports={mockAirports}
+          aircraft={mockAircraftList}
+          crew={mockFlightCrewList}
+          movements={mockMovements}
+          selectedAircraftId={null}
+          onSelectAircraft={vi.fn()}
+          selectedMovementId={null}
+          onSelectMovement={vi.fn()}
+          userRole="manager"
+          onRefresh={onRefresh}
+          onOpenCreateMovement={vi.fn()}
+        />,
+      );
+
+      // Open crew tab
+      const crewTabBtn = screen.getByRole('button', { name: /^crew$/i });
+      fireEvent.click(crewTabBtn);
+
+      const addCrewBtn = screen.getByTestId('add-crew-button-tab');
+      expect(addCrewBtn).toBeInTheDocument();
+      fireEvent.click(addCrewBtn);
+
+      expect(screen.getByText('Register Flight Crew Member')).toBeInTheDocument();
+
+      fireEvent.change(screen.getByTestId('crew-name-input'), { target: { value: 'Capt. Aditya Rao' } });
+      fireEvent.change(screen.getByTestId('crew-email-input'), { target: { value: 'aditya.rao@airways.com' } });
+      fireEvent.change(screen.getByTestId('crew-license-input'), { target: { value: 'ATPL-IND-10293' } });
+      fireEvent.change(screen.getByTestId('crew-phone-input'), { target: { value: '+91 99887 66554' } });
+      fireEvent.change(screen.getByTestId('crew-role-select'), { target: { value: 'pilot' } });
+      fireEvent.change(screen.getByTestId('crew-password-input'), { target: { value: 'Aditya@Sky2026' } });
+
+      fireEvent.click(screen.getByTestId('submit-crew-button'));
+
+      await waitFor(() => {
+        expect(airwaysService.createFlightCrew).toHaveBeenCalledWith({
+          fullName: 'Capt. Aditya Rao',
+          email: 'aditya.rao@airways.com',
+          licenseNumber: 'ATPL-IND-10293',
+          phone: '+91 99887 66554',
+          crewRole: 'pilot',
+          password: 'Aditya@Sky2026',
+        });
+        expect(onRefresh).toHaveBeenCalled();
+      });
+    });
+
+    it('immediately reflects new flight crew in CreateFlightMovementModal pilot assignment dropdown without reload', () => {
+      const updatedCrew: FlightCrew[] = [
+        ...mockFlightCrewList,
+        {
+          id: 'fc-new-99',
+          org_id: 'org-air-1',
+          user_id: 'u-air-99',
+          license_number: 'ATPL-IND-9999',
+          crew_role: 'pilot',
+          status: 'available',
+          created_at: new Date().toISOString(),
+          user: { id: 'u-air-99', email: 'aditya.rao@airways.com', full_name: 'Capt. Aditya Rao' },
+        },
+      ];
+
+      render(
+        <CreateFlightMovementModal
+          isOpen={true}
+          onClose={vi.fn()}
+          airports={mockAirports}
+          aircraft={mockAircraftList}
+          crew={updatedCrew}
+          flights={mockFlights}
+          onMovementCreated={vi.fn()}
+        />,
+      );
+
+      expect(screen.getByText(/Capt. Aditya Rao/i)).toBeInTheDocument();
+    });
+
+    it('guards Add Crew and Add Aircraft buttons: driver/pilot-role user cannot see them', () => {
+      render(
+        <AirwaysSidebar
+          flights={mockFlights}
+          airports={mockAirports}
+          aircraft={mockAircraftList}
+          crew={mockFlightCrewList}
+          movements={mockMovements}
+          selectedAircraftId={null}
+          onSelectAircraft={vi.fn()}
+          selectedMovementId={null}
+          onSelectMovement={vi.fn()}
+          userRole="driver"
+          onRefresh={vi.fn()}
+          onOpenCreateMovement={vi.fn()}
+        />,
+      );
+
+      // In aircraft tab
+      const aircraftTabBtn = screen.getByRole('button', { name: /^aircraft$/i });
+      fireEvent.click(aircraftTabBtn);
+      expect(screen.queryByTestId('add-crew-button')).not.toBeInTheDocument();
+      expect(screen.queryByTestId('add-aircraft-button')).not.toBeInTheDocument();
+
+      // In crew tab
+      const crewTabBtn = screen.getByRole('button', { name: /^crew$/i });
+      fireEvent.click(crewTabBtn);
+      expect(screen.queryByTestId('add-crew-button-tab')).not.toBeInTheDocument();
     });
   });
 

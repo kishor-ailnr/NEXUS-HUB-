@@ -19,212 +19,124 @@ import {
   AdminRailReport,
   CrewBehaviorScore,
 } from '@nexus-ways/shared';
-
-const getHeaders = () => ({
-  'Content-Type': 'application/json',
-});
+import { apiFetch } from '../lib/api';
 
 export const railwaysService = {
   // Stations
   async getStations(): Promise<Station[]> {
-    const res = await fetch('/stations', { headers: getHeaders(), credentials: 'include' });
-    if (!res.ok) throw new Error('Failed to fetch stations');
-    return res.json();
+    return apiFetch<Station[]>('/stations');
   },
 
   async createStation(dto: CreateStationDto): Promise<Station> {
-    const res = await fetch('/stations', {
+    return apiFetch<Station>('/stations', {
       method: 'POST',
-      headers: getHeaders(),
-      credentials: 'include',
-      body: JSON.stringify(dto),
+      data: dto,
     });
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
-      throw new Error(err.message || 'Failed to create station');
-    }
-    return res.json();
   },
 
   async deleteStation(id: string): Promise<{ success: boolean }> {
-    const res = await fetch(`/stations/${id}`, {
+    return apiFetch<{ success: boolean }>(`/stations/${id}`, {
       method: 'DELETE',
-      headers: getHeaders(),
-      credentials: 'include',
     });
-    if (!res.ok) throw new Error('Failed to delete station');
-    return res.json();
   },
 
   // Locomotives
   async getLocomotives(): Promise<Locomotive[]> {
-    const res = await fetch('/locomotives', { headers: getHeaders(), credentials: 'include' });
-    if (!res.ok) throw new Error('Failed to fetch locomotives');
-    return res.json();
+    return apiFetch<Locomotive[]>('/locomotives');
   },
 
   async createLocomotive(dto: CreateLocomotiveDto): Promise<Locomotive> {
-    const res = await fetch('/locomotives', {
+    return apiFetch<Locomotive>('/locomotives', {
       method: 'POST',
-      headers: getHeaders(),
-      credentials: 'include',
-      body: JSON.stringify(dto),
+      data: dto,
     });
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
-      throw new Error(err.message || 'Failed to create locomotive');
-    }
-    return res.json();
   },
 
   async deleteLocomotive(id: string): Promise<{ success: boolean }> {
-    const res = await fetch(`/locomotives/${id}`, {
+    return apiFetch<{ success: boolean }>(`/locomotives/${id}`, {
       method: 'DELETE',
-      headers: getHeaders(),
-      credentials: 'include',
     });
-    if (!res.ok) throw new Error('Failed to delete locomotive');
-    return res.json();
   },
 
   // Rakes
   async getRakes(): Promise<Rake[]> {
-    const res = await fetch('/rakes', { headers: getHeaders(), credentials: 'include' });
-    if (!res.ok) throw new Error('Failed to fetch rakes');
-    return res.json();
+    return apiFetch<Rake[]>('/rakes');
   },
 
   async createRake(dto: CreateRakeDto): Promise<Rake> {
-    const res = await fetch('/rakes', {
+    return apiFetch<Rake>('/rakes', {
       method: 'POST',
-      headers: getHeaders(),
-      credentials: 'include',
-      body: JSON.stringify(dto),
+      data: dto,
     });
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
-      throw new Error(err.message || 'Failed to create rake');
-    }
-    return res.json();
   },
 
   async deleteRake(id: string): Promise<{ success: boolean }> {
-    const res = await fetch(`/rakes/${id}`, {
+    return apiFetch<{ success: boolean }>(`/rakes/${id}`, {
       method: 'DELETE',
-      headers: getHeaders(),
-      credentials: 'include',
     });
-    if (!res.ok) throw new Error('Failed to delete rake');
-    return res.json();
   },
 
   // Loco Pilots
   async getLocoPilots(): Promise<LocoPilot[]> {
-    const res = await fetch('/loco-pilots', { headers: getHeaders(), credentials: 'include' });
-    if (!res.ok) throw new Error('Failed to fetch loco pilots');
-    return res.json();
+    return apiFetch<LocoPilot[]>('/loco-pilots');
   },
 
   async createLocoPilot(dto: CreateLocoPilotDto): Promise<LocoPilot> {
-    const res = await fetch('/loco-pilots', {
+    return apiFetch<LocoPilot>('/loco-pilots', {
       method: 'POST',
-      headers: getHeaders(),
-      credentials: 'include',
-      body: JSON.stringify(dto),
+      data: dto,
     });
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
-      throw new Error(err.message || 'Failed to create loco pilot');
-    }
-    return res.json();
   },
 
   async deleteLocoPilot(id: string): Promise<{ success: boolean }> {
-    const res = await fetch(`/loco-pilots/${id}`, {
+    return apiFetch<{ success: boolean }>(`/loco-pilots/${id}`, {
       method: 'DELETE',
-      headers: getHeaders(),
-      credentials: 'include',
     });
-    if (!res.ok) throw new Error('Failed to delete loco pilot');
-    return res.json();
   },
 
   // Trains
   async getTrains(): Promise<Train[]> {
-    const res = await fetch('/trains', { headers: getHeaders(), credentials: 'include' });
-    if (!res.ok) throw new Error('Failed to fetch trains');
-    return res.json();
+    return apiFetch<Train[]>('/trains');
   },
 
   async createTrain(dto: CreateTrainDto): Promise<Train> {
-    const res = await fetch('/trains', {
+    return apiFetch<Train>('/trains', {
       method: 'POST',
-      headers: getHeaders(),
-      credentials: 'include',
-      body: JSON.stringify(dto),
+      data: dto,
     });
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
-      throw new Error(err.message || 'Failed to create train');
-    }
-    return res.json();
   },
 
   async deleteTrain(id: string): Promise<{ success: boolean }> {
-    const res = await fetch(`/trains/${id}`, {
+    return apiFetch<{ success: boolean }>(`/trains/${id}`, {
       method: 'DELETE',
-      headers: getHeaders(),
-      credentials: 'include',
     });
-    if (!res.ok) throw new Error('Failed to delete train');
-    return res.json();
   },
 
   // Train Movements
   async getMovements(): Promise<TrainMovement[]> {
-    const res = await fetch('/train-movements', { headers: getHeaders(), credentials: 'include' });
-    if (!res.ok) throw new Error('Failed to fetch train movements');
-    return res.json();
+    return apiFetch<TrainMovement[]>('/train-movements');
   },
 
   async getMovement(id: string): Promise<TrainMovement> {
-    const res = await fetch(`/train-movements/${id}`, { headers: getHeaders(), credentials: 'include' });
-    if (!res.ok) throw new Error('Failed to fetch train movement');
-    return res.json();
+    return apiFetch<TrainMovement>(`/train-movements/${id}`);
   },
 
   async createMovement(dto: CreateTrainMovementDto): Promise<TrainMovement> {
-    const res = await fetch('/train-movements', {
+    return apiFetch<TrainMovement>('/train-movements', {
       method: 'POST',
-      headers: getHeaders(),
-      credentials: 'include',
-      body: JSON.stringify(dto),
+      data: dto,
     });
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
-      throw new Error(err.message || 'Failed to create train movement');
-    }
-    return res.json();
   },
 
   async updateMovementStatus(id: string, status: TrainMovementStatus): Promise<TrainMovement> {
-    const res = await fetch(`/train-movements/${id}/status`, {
+    return apiFetch<TrainMovement>(`/train-movements/${id}/status`, {
       method: 'PATCH',
-      headers: getHeaders(),
-      credentials: 'include',
-      body: JSON.stringify({ status }),
+      data: { status },
     });
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
-      throw new Error(err.message || 'Failed to update movement status');
-    }
-    return res.json();
   },
 
   async getSavedRoutes(): Promise<SavedRailRoute[]> {
-    const res = await fetch('/train-movements/saved-routes', { headers: getHeaders(), credentials: 'include' });
-    if (!res.ok) throw new Error('Failed to fetch saved rail routes');
-    return res.json();
+    return apiFetch<SavedRailRoute[]>('/train-movements/saved-routes');
   },
 
   // Slot Intelligence Check
@@ -240,51 +152,26 @@ export const railwaysService = {
     if (routeId) params.append('routeId', routeId);
     if (proposedDeparture) params.append('proposedDeparture', proposedDeparture);
 
-    const res = await fetch(`/train-movements/slot-check?${params.toString()}`, {
-      headers: getHeaders(),
-      credentials: 'include',
-    });
-    if (!res.ok) throw new Error('Failed to check rail slot');
-    return res.json();
+    return apiFetch<RailSlotCheckResponse>(`/train-movements/slot-check?${params.toString()}`);
   },
 
   // ETA Confidence
   async getEta(movementId: string): Promise<TrainMovementEtaResponse> {
-    const res = await fetch(`/train-movements/${movementId}/eta`, {
-      headers: getHeaders(),
-      credentials: 'include',
-    });
-    if (!res.ok) throw new Error('Failed to fetch ETA confidence');
-    return res.json();
+    return apiFetch<TrainMovementEtaResponse>(`/train-movements/${movementId}/eta`);
   },
 
   // Report signed URL
   async getReportUrl(movementId: string): Promise<TrainMovementReportUrlResponse> {
-    const res = await fetch(`/train-movements/${movementId}/report`, {
-      headers: getHeaders(),
-      credentials: 'include',
-    });
-    if (!res.ok) throw new Error('Failed to fetch train movement report');
-    return res.json();
+    return apiFetch<TrainMovementReportUrlResponse>(`/train-movements/${movementId}/report`);
   },
 
   // Admin reports listing
   async getAdminReports(): Promise<AdminRailReport[]> {
-    const res = await fetch('/train-movements/reports', {
-      headers: getHeaders(),
-      credentials: 'include',
-    });
-    if (!res.ok) throw new Error('Failed to fetch train reports');
-    return res.json();
+    return apiFetch<AdminRailReport[]>('/train-movements/reports');
   },
 
   // Crew behavior score
   async getCrewScore(locoPilotId: string): Promise<CrewBehaviorScore[]> {
-    const res = await fetch(`/train-movements/${locoPilotId}/crew-score`, {
-      headers: getHeaders(),
-      credentials: 'include',
-    });
-    if (!res.ok) throw new Error('Failed to fetch crew score');
-    return res.json();
+    return apiFetch<CrewBehaviorScore[]>(`/train-movements/${locoPilotId}/crew-score`);
   },
 };

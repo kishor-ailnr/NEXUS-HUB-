@@ -17,8 +17,13 @@ import {
   CheckCircle2,
   Clock,
   Play,
+  UserPlus,
+  Eye,
+  EyeOff,
+  X,
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { driversService } from '../services/drivers';
 
 interface VehicleSidebarProps {
   vehicles: Vehicle[];
@@ -26,6 +31,7 @@ interface VehicleSidebarProps {
   selectedVehicleId?: string | null;
   onSelectVehicle: (vehicle: Vehicle) => void;
   onVehicleCreated: (vehicle: Vehicle) => void;
+  onDriverCreated?: (driver: Driver) => void;
   onCreateTrip: (vehicle: Vehicle) => void;
   currentUserRole?: string;
 }
@@ -36,12 +42,23 @@ export const VehicleSidebar: React.FC<VehicleSidebarProps> = ({
   selectedVehicleId,
   onSelectVehicle,
   onVehicleCreated,
+  onDriverCreated,
   onCreateTrip,
   currentUserRole,
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Add Driver Form State
+  const [isAddDriverModalOpen, setIsAddDriverModalOpen] = useState(false);
+  const [newDriverName, setNewDriverName] = useState('');
+  const [newDriverEmail, setNewDriverEmail] = useState('');
+  const [newDriverLicense, setNewDriverLicense] = useState('');
+  const [newDriverPhone, setNewDriverPhone] = useState('');
+  const [newDriverPassword, setNewDriverPassword] = useState('');
+  const [showDriverPassword, setShowDriverPassword] = useState(false);
+  const [isSubmittingDriver, setIsSubmittingDriver] = useState(false);
 
   // Add Vehicle Form State
   const [regNumber, setRegNumber] = useState('');
@@ -50,6 +67,38 @@ export const VehicleSidebar: React.FC<VehicleSidebarProps> = ({
   const [assignedDriverId, setAssignedDriverId] = useState('');
 
   const isManager = currentUserRole === 'manager';
+
+  const handleAddDriver = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newDriverName.trim() || !newDriverEmail.trim() || !newDriverLicense.trim()) {
+      toast.error('Full name, email, and license number are required');
+      return;
+    }
+
+    try {
+      setIsSubmittingDriver(true);
+      const newDriver = await driversService.createDriver({
+        fullName: newDriverName.trim(),
+        email: newDriverEmail.trim(),
+        licenseNumber: newDriverLicense.trim().toUpperCase(),
+        phone: newDriverPhone.trim() || undefined,
+        password: newDriverPassword.trim() || undefined,
+      });
+
+      toast.success(`Driver ${newDriver.user?.full_name || newDriverName} registered successfully`);
+      onDriverCreated?.(newDriver);
+      setIsAddDriverModalOpen(false);
+      setNewDriverName('');
+      setNewDriverEmail('');
+      setNewDriverLicense('');
+      setNewDriverPhone('');
+      setNewDriverPassword('');
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to register driver');
+    } finally {
+      setIsSubmittingDriver(false);
+    }
+  };
 
   const filteredVehicles = vehicles.filter((v) =>
     v.registration_number.toLowerCase().includes(searchTerm.toLowerCase().trim()),
@@ -92,15 +141,26 @@ export const VehicleSidebar: React.FC<VehicleSidebarProps> = ({
             <CardTitle className="text-base font-bold text-slate-900">Fleet Registry</CardTitle>
           </div>
           {isManager && (
-            <Button
-              size="sm"
-              onClick={() => setIsAddModalOpen(true)}
-              className="gap-1 bg-blue-600 hover:bg-blue-700 text-white text-xs h-8 px-2.5"
-              data-testid="add-vehicle-button"
-            >
-              <Plus className="w-3.5 h-3.5" />
-              <span>Add</span>
-            </Button>
+            <div className="flex items-center gap-1.5">
+              <Button
+                size="sm"
+                onClick={() => setIsAddDriverModalOpen(true)}
+                className="gap-1 bg-emerald-600 hover:bg-emerald-700 text-white text-xs h-8 px-2.5 shadow-sm"
+                data-testid="add-driver-button"
+              >
+                <UserPlus className="w-3.5 h-3.5" />
+                <span>Add Driver</span>
+              </Button>
+              <Button
+                size="sm"
+                onClick={() => setIsAddModalOpen(true)}
+                className="gap-1 bg-blue-600 hover:bg-blue-700 text-white text-xs h-8 px-2.5 shadow-sm"
+                data-testid="add-vehicle-button"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>Add Vehicle</span>
+              </Button>
+            </div>
           )}
         </CardHeader>
         <CardContent className="pt-3 space-y-3">
@@ -305,6 +365,131 @@ export const VehicleSidebar: React.FC<VehicleSidebarProps> = ({
                   data-testid="submit-vehicle-button"
                 >
                   {isSubmitting ? 'Registering...' : 'Register Vehicle'}
+                </Button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+      {/* Add Driver Modal */}
+      {isAddDriverModalOpen && (
+        <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white rounded-xl shadow-2xl max-w-md w-full p-6 border border-slate-200 animate-in fade-in zoom-in-95">
+            <div className="flex items-center justify-between mb-1">
+              <h3 className="text-lg font-bold text-slate-900">Register Fleet Driver</h3>
+              <button
+                type="button"
+                onClick={() => setIsAddDriverModalOpen(false)}
+                className="text-slate-400 hover:text-slate-600"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            <p className="text-xs text-slate-500 mb-4">
+              Register a commercial driver for fleet assignment and live turn-by-turn routing.
+            </p>
+
+            <form onSubmit={handleAddDriver} className="space-y-3.5">
+              <div>
+                <label className="text-xs font-semibold text-slate-700 block mb-1">
+                  Full Name *
+                </label>
+                <Input
+                  required
+                  placeholder="e.g. Rajesh Sharma"
+                  value={newDriverName}
+                  onChange={(e) => setNewDriverName(e.target.value)}
+                  className="text-xs"
+                  data-testid="driver-name-input"
+                />
+              </div>
+
+              <div>
+                <label className="text-xs font-semibold text-slate-700 block mb-1">
+                  Email Address *
+                </label>
+                <Input
+                  type="email"
+                  required
+                  placeholder="e.g. rajesh.driver@nexusways.com"
+                  value={newDriverEmail}
+                  onChange={(e) => setNewDriverEmail(e.target.value)}
+                  className="text-xs"
+                  data-testid="driver-email-input"
+                />
+              </div>
+
+              <div>
+                <label className="text-xs font-semibold text-slate-700 block mb-1">
+                  Driving License Number *
+                </label>
+                <Input
+                  required
+                  placeholder="e.g. MH12-2023-0098765"
+                  value={newDriverLicense}
+                  onChange={(e) => setNewDriverLicense(e.target.value)}
+                  className="uppercase font-mono text-xs"
+                  data-testid="driver-license-input"
+                />
+              </div>
+
+              <div>
+                <label className="text-xs font-semibold text-slate-700 block mb-1">
+                  Phone Number
+                </label>
+                <Input
+                  type="tel"
+                  placeholder="e.g. +91 98765 43210"
+                  value={newDriverPhone}
+                  onChange={(e) => setNewDriverPhone(e.target.value)}
+                  className="text-xs"
+                  data-testid="driver-phone-input"
+                />
+              </div>
+
+              <div>
+                <label className="text-xs font-semibold text-slate-700 block mb-1">
+                  Initial Password
+                </label>
+                <div className="relative">
+                  <Input
+                    type={showDriverPassword ? 'text' : 'password'}
+                    placeholder="Set initial password (default: Driver@Nexus123)"
+                    value={newDriverPassword}
+                    onChange={(e) => setNewDriverPassword(e.target.value)}
+                    className="text-xs pr-9"
+                    data-testid="driver-password-input"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowDriverPassword(!showDriverPassword)}
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                  >
+                    {showDriverPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+                <p className="text-[10px] text-slate-400 mt-1">
+                  The driver will use this password to sign in to the Driver Console.
+                </p>
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setIsAddDriverModalOpen(false)}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="submit"
+                  size="sm"
+                  disabled={isSubmittingDriver}
+                  className="bg-emerald-600 hover:bg-emerald-700 text-white"
+                  data-testid="submit-driver-button"
+                >
+                  {isSubmittingDriver ? 'Registering...' : 'Register Driver'}
                 </Button>
               </div>
             </form>

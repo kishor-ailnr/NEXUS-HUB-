@@ -36,7 +36,7 @@ export class AuthController {
     const cookieOptions: any = {
       httpOnly: true,
       secure: isProd,
-      sameSite: 'lax',
+      sameSite: isProd ? 'none' : 'lax',
       path: '/',
     };
 
@@ -58,10 +58,12 @@ export class AuthController {
   }
 
   private clearCookies(res: Response) {
+    const isProd = this.configService.get<string>('NODE_ENV') === 'production';
     const domain = this.configService.get<string>('COOKIE_DOMAIN');
     const cookieOptions: any = {
       httpOnly: true,
-      sameSite: 'lax',
+      secure: isProd,
+      sameSite: isProd ? 'none' : 'lax',
       path: '/',
     };
 

@@ -1,6 +1,6 @@
 import React from 'react';
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { VehicleSidebar } from '../VehicleSidebar';
 import { RoadwaysMap } from '../RoadwaysMap';
@@ -61,6 +61,24 @@ vi.mock('../../store/authStore', () => ({
 }));
 
 // Mock services
+vi.mock('../../services/drivers', () => ({
+  driversService: {
+    getDrivers: vi.fn().mockResolvedValue([]),
+    createDriver: vi.fn().mockImplementation((dto) =>
+      Promise.resolve({
+        id: 'd-new-99',
+        org_id: 'org-1',
+        user_id: 'u-new-99',
+        license_number: dto.licenseNumber,
+        phone: dto.phone,
+        status: 'available',
+        created_at: new Date().toISOString(),
+        user: { id: 'u-new-99', email: dto.email, full_name: dto.fullName },
+      }),
+    ),
+  },
+}));
+
 vi.mock('../../services/vehicles', () => ({
   vehiclesService: {
     getVehicles: vi.fn().mockResolvedValue([
@@ -193,6 +211,100 @@ describe('Roadways Operational Components', () => {
 
       expect(screen.getByText('Add Vehicle to Fleet')).toBeInTheDocument();
       expect(screen.getByTestId('registration-input')).toBeInTheDocument();
+    });
+
+    it('renders Add Driver button for managers, submits valid driver data, and calls createDriver with correct payload', async () => {
+      const { driversService } = await import('../../services/drivers');
+      const onDriverCreated = vi.fn();
+
+      render(
+        <MemoryRouter>
+          <VehicleSidebar
+            vehicles={mockVehicles}
+            drivers={mockDrivers}
+            onSelectVehicle={vi.fn()}
+            onVehicleCreated={vi.fn()}
+            onDriverCreated={onDriverCreated}
+            onCreateTrip={vi.fn()}
+            currentUserRole="manager"
+          />
+        </MemoryRouter>,
+      );
+
+      const addDriverBtn = screen.getByTestId('add-driver-button');
+      expect(addDriverBtn).toBeInTheDocument();
+      fireEvent.click(addDriverBtn);
+
+      expect(screen.getByText('Register Fleet Driver')).toBeInTheDocument();
+
+      fireEvent.change(screen.getByTestId('driver-name-input'), { target: { value: 'Suresh Raina' } });
+      fireEvent.change(screen.getByTestId('driver-email-input'), { target: { value: 'suresh@nexusways.com' } });
+      fireEvent.change(screen.getByTestId('driver-license-input'), { target: { value: 'DL-04-2024-9988' } });
+      fireEvent.change(screen.getByTestId('driver-phone-input'), { target: { value: '+91 98111 22233' } });
+      fireEvent.change(screen.getByTestId('driver-password-input'), { target: { value: 'Raina@Nexus123' } });
+
+      fireEvent.click(screen.getByTestId('submit-driver-button'));
+
+      await waitFor(() => {
+        expect(driversService.createDriver).toHaveBeenCalledWith({
+          fullName: 'Suresh Raina',
+          email: 'suresh@nexusways.com',
+          licenseNumber: 'DL-04-2024-9988',
+          phone: '+91 98111 22233',
+          password: 'Raina@Nexus123',
+        });
+      });
+    });
+
+    it('immediately reflects new driver in Add Vehicle driver assignment dropdown without reload', () => {
+      const updatedDrivers: Driver[] = [
+        ...mockDrivers,
+        {
+          id: 'd-new-99',
+          org_id: 'org-1',
+          user_id: 'u-new-99',
+          license_number: 'HR-26-2024-7711',
+          phone: '+91 98111 22233',
+          status: 'available',
+          created_at: new Date().toISOString(),
+          user: { id: 'u-new-99', email: 'karan@nexusways.com', full_name: 'Karan Mehra' },
+        },
+      ];
+
+      render(
+        <MemoryRouter>
+          <VehicleSidebar
+            vehicles={mockVehicles}
+            drivers={updatedDrivers}
+            onSelectVehicle={vi.fn()}
+            onVehicleCreated={vi.fn()}
+            onCreateTrip={vi.fn()}
+            currentUserRole="manager"
+          />
+        </MemoryRouter>,
+      );
+
+      // Open Add Vehicle modal and verify driver appears in dropdown
+      fireEvent.click(screen.getByTestId('add-vehicle-button'));
+      expect(screen.getByText(/Karan Mehra \(HR-26-2024-7711\)/i)).toBeInTheDocument();
+    });
+
+    it('guards Add Driver and Add Vehicle buttons: driver-role user cannot see them', () => {
+      render(
+        <MemoryRouter>
+          <VehicleSidebar
+            vehicles={mockVehicles}
+            drivers={mockDrivers}
+            onSelectVehicle={vi.fn()}
+            onVehicleCreated={vi.fn()}
+            onCreateTrip={vi.fn()}
+            currentUserRole="driver"
+          />
+        </MemoryRouter>,
+      );
+
+      expect(screen.queryByTestId('add-driver-button')).not.toBeInTheDocument();
+      expect(screen.queryByTestId('add-vehicle-button')).not.toBeInTheDocument();
     });
   });
 

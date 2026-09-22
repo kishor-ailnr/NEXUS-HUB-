@@ -23,6 +23,9 @@ import {
   X,
   Compass,
   Package,
+  UserPlus,
+  Eye,
+  EyeOff,
 } from 'lucide-react';
 import { Label } from './ui/label';
 import { toast } from 'sonner';
@@ -79,7 +82,11 @@ export const AirwaysSidebar: React.FC<AirwaysSidebarProps> = ({
   const [newCrewName, setNewCrewName] = useState('');
   const [newCrewEmail, setNewCrewEmail] = useState('');
   const [newCrewLicense, setNewCrewLicense] = useState('');
+  const [newCrewPhone, setNewCrewPhone] = useState('');
   const [newCrewRole, setNewCrewRole] = useState<'pilot' | 'cabin'>('pilot');
+  const [newCrewPassword, setNewCrewPassword] = useState('');
+  const [showCrewPassword, setShowCrewPassword] = useState(false);
+  const [isSubmittingCrew, setIsSubmittingCrew] = useState(false);
 
   const [newFlightNumber, setNewFlightNumber] = useState('');
   const [newFlightOriginId, setNewFlightOriginId] = useState('');
@@ -141,20 +148,27 @@ export const AirwaysSidebar: React.FC<AirwaysSidebarProps> = ({
       return;
     }
     try {
+      setIsSubmittingCrew(true);
       await airwaysService.createFlightCrew({
         fullName: newCrewName.trim(),
         email: newCrewEmail.trim(),
-        licenseNumber: newCrewLicense.trim(),
+        licenseNumber: newCrewLicense.trim().toUpperCase(),
+        phone: newCrewPhone.trim() || undefined,
         crewRole: newCrewRole,
+        password: newCrewPassword.trim() || undefined,
       });
       toast.success(`Flight crew member ${newCrewName} registered`);
       setIsAddCrewOpen(false);
       setNewCrewName('');
       setNewCrewEmail('');
       setNewCrewLicense('');
+      setNewCrewPhone('');
+      setNewCrewPassword('');
       onRefresh();
     } catch (err: any) {
       toast.error(err.message || 'Failed to create crew member');
+    } finally {
+      setIsSubmittingCrew(false);
     }
   };
 
@@ -353,14 +367,26 @@ export const AirwaysSidebar: React.FC<AirwaysSidebarProps> = ({
                 Aircraft Fleet ({filteredAircraft.length})
               </span>
               {isManager && (
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  onClick={() => setIsAddAircraftOpen(true)}
-                  className="h-6 px-2 text-[11px] text-sky-400 hover:text-sky-300 gap-1"
-                >
-                  <Plus className="h-3 w-3" /> Add Aircraft
-                </Button>
+                <div className="flex items-center gap-1.5">
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => setIsAddCrewOpen(true)}
+                    className="h-6 px-2 text-[11px] text-emerald-400 hover:text-emerald-300 gap-1"
+                    data-testid="add-crew-button"
+                  >
+                    <UserPlus className="h-3 w-3" /> Add Crew
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => setIsAddAircraftOpen(true)}
+                    className="h-6 px-2 text-[11px] text-sky-400 hover:text-sky-300 gap-1"
+                    data-testid="add-aircraft-button"
+                  >
+                    <Plus className="h-3 w-3" /> Add Aircraft
+                  </Button>
+                </div>
               )}
             </div>
 
@@ -511,8 +537,9 @@ export const AirwaysSidebar: React.FC<AirwaysSidebarProps> = ({
                   variant="ghost"
                   onClick={() => setIsAddCrewOpen(true)}
                   className="h-6 px-2 text-[11px] text-sky-400 hover:text-sky-300 gap-1"
+                  data-testid="add-crew-button-tab"
                 >
-                  <Plus className="h-3 w-3" /> Add Crew
+                  <UserPlus className="h-3 w-3" /> Add Crew
                 </Button>
               )}
             </div>
@@ -827,6 +854,121 @@ export const AirwaysSidebar: React.FC<AirwaysSidebarProps> = ({
                 </Button>
                 <Button type="submit" size="sm" className="bg-sky-600 hover:bg-sky-500 text-white">
                   Save Flight Route
+                </Button>
+              </div>
+            </form>
+          </Card>
+        </div>
+      )}
+      {/* Add Flight Crew Modal */}
+      {isAddCrewOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm p-4">
+          <Card className="w-full max-w-md border-border bg-card shadow-2xl">
+            <form onSubmit={handleCreateCrew}>
+              <div className="flex items-center justify-between p-4 border-b border-border">
+                <span className="font-semibold text-sm">Register Flight Crew Member</span>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setIsAddCrewOpen(false)}
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+              <div className="p-4 space-y-3">
+                <div className="space-y-1">
+                  <Label className="text-xs">Full Name *</Label>
+                  <Input
+                    placeholder="e.g. Capt. Rajesh Nair"
+                    value={newCrewName}
+                    onChange={(e) => setNewCrewName(e.target.value)}
+                    required
+                    data-testid="crew-name-input"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs">Email Address *</Label>
+                  <Input
+                    type="email"
+                    placeholder="e.g. rajesh.pilot@airways.com"
+                    value={newCrewEmail}
+                    onChange={(e) => setNewCrewEmail(e.target.value)}
+                    required
+                    data-testid="crew-email-input"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs">License / ATPL Number *</Label>
+                  <Input
+                    placeholder="e.g. ATPL-IND-9942"
+                    value={newCrewLicense}
+                    onChange={(e) => setNewCrewLicense(e.target.value)}
+                    required
+                    className="uppercase font-mono text-xs"
+                    data-testid="crew-license-input"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs">Phone (Optional)</Label>
+                  <Input
+                    type="tel"
+                    placeholder="e.g. +91 98765 43210"
+                    value={newCrewPhone}
+                    onChange={(e) => setNewCrewPhone(e.target.value)}
+                    data-testid="crew-phone-input"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs">Crew Role</Label>
+                  <select
+                    value={newCrewRole}
+                    onChange={(e) => setNewCrewRole(e.target.value as any)}
+                    className="w-full h-9 rounded-md border border-input bg-background px-3 text-xs"
+                    data-testid="crew-role-select"
+                  >
+                    <option value="pilot">Captain / First Officer (Pilot)</option>
+                    <option value="cabin">Flight Navigator / Cargo Officer</option>
+                  </select>
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs">Initial Password</Label>
+                  <div className="relative">
+                    <Input
+                      type={showCrewPassword ? 'text' : 'password'}
+                      placeholder="Set initial password (default: Pilot@Nexus123)"
+                      value={newCrewPassword}
+                      onChange={(e) => setNewCrewPassword(e.target.value)}
+                      className="pr-9 text-xs"
+                      data-testid="crew-password-input"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowCrewPassword(!showCrewPassword)}
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                    >
+                      {showCrewPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                  </div>
+                </div>
+              </div>
+              <div className="flex items-center justify-end gap-2 p-4 border-t border-border">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setIsAddCrewOpen(false)}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="submit"
+                  size="sm"
+                  disabled={isSubmittingCrew}
+                  className="bg-sky-600 hover:bg-sky-500 text-white"
+                  data-testid="submit-crew-button"
+                >
+                  {isSubmittingCrew ? 'Registering...' : 'Register Crew Member'}
                 </Button>
               </div>
             </form>

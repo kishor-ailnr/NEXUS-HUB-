@@ -566,6 +566,7 @@ export interface CreateLocoPilotDto {
   email: string;
   licenseNumber: string;
   phone?: string;
+  password?: string;
 }
 
 export type TrainStatus = 'idle' | 'active' | 'maintenance';
@@ -822,8 +823,10 @@ export interface CreateFlightCrewDto {
   fullName: string;
   email: string;
   licenseNumber: string;
+  phone?: string;
   crewRole?: FlightCrewRole;
   status?: FlightCrewStatus;
+  password?: string;
 }
 
 export interface Flight {
@@ -1078,8 +1081,10 @@ export interface CreateSeaCrewDto {
   fullName: string;
   email: string;
   certificateNumber: string;
+  phone?: string;
   crewRole?: SeaCrewRole;
   status?: SeaCrewStatus;
+  password?: string;
 }
 
 export interface Voyage {

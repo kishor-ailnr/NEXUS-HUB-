@@ -1,4 +1,5 @@
 import { io, Socket } from 'socket.io-client';
+import { supabase } from '../lib/supabase';
 import {
   NotificationItem,
   GhostPositionPayload,
@@ -97,13 +98,28 @@ export const socketService = {
       return socket;
     }
 
-    const socketUrl = window.location.origin;
-    socket = io(`${socketUrl}/realtime`, {
+    const socketBase = (
+      import.meta.env.VITE_SOCKET_URL ||
+      import.meta.env.VITE_API_URL ||
+      import.meta.env.VITE_API_BASE_URL ||
+      ''
+    ).replace(/\/$/, '');
+    const socketTarget = socketBase ? `${socketBase}/realtime` : '/realtime';
+
+    socket = io(socketTarget, {
       path: '/socket.io',
       withCredentials: true,
       transports: ['websocket', 'polling'],
       reconnectionAttempts: 5,
       reconnectionDelay: 2000,
+      auth: async (cb: (data: { token?: string }) => void) => {
+        try {
+          const { data } = await supabase.auth.getSession();
+          cb({ token: data?.session?.access_token });
+        } catch {
+          cb({});
+        }
+      },
     });
 
     socket.on('connect', () => {

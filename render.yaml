@@ -1,0 +1,20 @@
+services:
+  - type: web
+    name: nexus-ways-api
+    env: node
+    plan: free
+    buildCommand: npm ci && npm run build --workspace=@nexus-ways/shared && npm run build --workspace=@nexus-ways/api
+    startCommand: npm run start:prod --workspace=@nexus-ways/api
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      - key: FRONTEND_ORIGIN
+        value: https://smart-supply-chain-v3.web.app,https://smart-supply-chain-v3.firebaseapp.com
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: SUPABASE_JWT_SECRET
+        sync: false

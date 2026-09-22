@@ -1,11 +1,13 @@
 import React from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { MemoryRouter, Routes, Route } from 'react-router-dom';
 import { RailwaysSidebar } from '../RailwaysSidebar';
 import { RailwaysMap } from '../RailwaysMap';
 import { MovementDetailsPanel } from '../MovementDetailsPanel';
+import { CreateMovementModal } from '../CreateMovementModal';
 import { DriverDashboard } from '../../pages/DriverDashboard';
+import { railwaysService } from '../../services/railways';
 import {
   Station,
   Train,
@@ -293,6 +295,114 @@ describe('Railways Frontend Modules', () => {
 
       fireEvent.change(searchInput, { target: { value: 'NonExistentTrain' } });
       expect(screen.queryByText('Deccan Queen')).not.toBeInTheDocument();
+    });
+
+    it('renders Add Loco Pilot button for manager, submits valid data, and calls createLocoPilot with correct payload', async () => {
+      const onRefresh = vi.fn();
+      render(
+        <RailwaysSidebar
+          trains={mockTrains}
+          stations={mockStations}
+          locomotives={mockLocomotives}
+          rakes={mockRakes}
+          locoPilots={mockLocoPilots}
+          movements={mockMovements}
+          selectedTrainId={null}
+          onSelectTrain={vi.fn()}
+          selectedMovementId={null}
+          onSelectMovement={vi.fn()}
+          userRole="manager"
+          onRefresh={onRefresh}
+          onOpenCreateMovement={vi.fn()}
+        />,
+      );
+
+      // Switch to pilots tab
+      const pilotsTabBtn = screen.getByText(/Pilots \(/i);
+      fireEvent.click(pilotsTabBtn);
+
+      const addPilotBtn = screen.getByTestId('add-pilot-button-tab');
+      expect(addPilotBtn).toBeInTheDocument();
+      fireEvent.click(addPilotBtn);
+
+      expect(screen.getByRole('heading', { name: 'Register Loco Pilot' })).toBeInTheDocument();
+
+      fireEvent.change(screen.getByTestId('pilot-name-input'), { target: { value: 'Devendra Yadav' } });
+      fireEvent.change(screen.getByTestId('pilot-email-input'), { target: { value: 'devendra@railways.in' } });
+      fireEvent.change(screen.getByTestId('pilot-license-input'), { target: { value: 'IR-LP-99881' } });
+      fireEvent.change(screen.getByTestId('pilot-phone-input'), { target: { value: '+91 94111 55667' } });
+      fireEvent.change(screen.getByTestId('pilot-password-input'), { target: { value: 'Pilot@Secret123' } });
+
+      fireEvent.click(screen.getByTestId('submit-pilot-button'));
+
+      await waitFor(() => {
+        expect(railwaysService.createLocoPilot).toHaveBeenCalledWith({
+          fullName: 'Devendra Yadav',
+          email: 'devendra@railways.in',
+          licenseNumber: 'IR-LP-99881',
+          phone: '+91 94111 55667',
+          password: 'Pilot@Secret123',
+        });
+        expect(onRefresh).toHaveBeenCalled();
+      });
+    });
+
+    it('immediately reflects new loco pilot in CreateMovementModal pilot assignment dropdown without reload', () => {
+      const updatedPilots: LocoPilot[] = [
+        ...mockLocoPilots,
+        {
+          id: 'lp-new-99',
+          org_id: 'org-rail-1',
+          user_id: 'u-pilot-99',
+          license_number: 'IR-LP-NEW99',
+          phone: '+91 94111 55667',
+          status: 'available',
+          created_at: new Date().toISOString(),
+          user: { id: 'u-pilot-99', email: 'newpilot@railways.in', full_name: 'Devendra Yadav' },
+        },
+      ];
+
+      render(
+        <CreateMovementModal
+          isOpen={true}
+          onClose={vi.fn()}
+          stations={mockStations}
+          trains={mockTrains}
+          locoPilots={updatedPilots}
+          savedRoutes={[]}
+          onMovementCreated={vi.fn()}
+        />,
+      );
+
+      expect(screen.getByText(/Devendra Yadav \(IR-LP-NEW99\)/i)).toBeInTheDocument();
+    });
+
+    it('guards Add Loco Pilot buttons: driver-role user cannot see them', () => {
+      render(
+        <RailwaysSidebar
+          trains={mockTrains}
+          stations={mockStations}
+          locomotives={mockLocomotives}
+          rakes={mockRakes}
+          locoPilots={mockLocoPilots}
+          movements={mockMovements}
+          selectedTrainId={null}
+          onSelectTrain={vi.fn()}
+          selectedMovementId={null}
+          onSelectMovement={vi.fn()}
+          userRole="driver"
+          onRefresh={vi.fn()}
+          onOpenCreateMovement={vi.fn()}
+        />,
+      );
+
+      // Switch to locos tab
+      fireEvent.click(screen.getByText(/Locos \(/i));
+      expect(screen.queryByTestId('add-pilot-button')).not.toBeInTheDocument();
+
+      // Switch to pilots tab
+      fireEvent.click(screen.getByText(/Pilots \(/i));
+      expect(screen.queryByTestId('add-pilot-button-tab')).not.toBeInTheDocument();
     });
   });
 

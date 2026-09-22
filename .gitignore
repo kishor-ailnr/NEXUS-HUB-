@@ -40,6 +40,9 @@ Thumbs.db
 .supabase/
 supabase/.temp/
 
+# Firebase
+.firebase/
+
 
 # Logs
 npm-debug.log*

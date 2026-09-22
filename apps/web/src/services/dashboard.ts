@@ -1,7 +1,5 @@
 import { DashboardStats, SystemStatus } from '@nexus-ways/shared';
-import { apiFetch } from '../lib/api';
-
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000';
+import { apiFetch, getApiUrl } from '../lib/api';
 
 export const dashboardService = {
   async getStats(): Promise<DashboardStats> {
@@ -21,7 +19,7 @@ export const dashboardService = {
   async measureClientLatency(): Promise<{ latencyMs: number; quality: 'Good' | 'Fair' | 'Poor' }> {
     const start = performance.now();
     try {
-      const url = `${API_BASE_URL.replace(/\/$/, '')}/health`;
+      const url = getApiUrl('/health');
       const res = await fetch(url, {
         cache: 'no-store',
         credentials: 'include',
