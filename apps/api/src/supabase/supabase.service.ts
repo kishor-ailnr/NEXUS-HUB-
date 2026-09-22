@@ -2,6 +2,14 @@ import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import * as jwt from 'jsonwebtoken';
+if (typeof (globalThis as any).WebSocket === 'undefined') {
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    (globalThis as any).WebSocket = require('ws');
+  } catch {
+    // Ignore if not present
+  }
+}
 
 const DEFAULT_SUPABASE_URL = 'https://facnvxbznmbhzdkbumby.supabase.co';
 const DEFAULT_SUPABASE_SERVICE_ROLE_KEY =

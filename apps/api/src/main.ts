@@ -1,3 +1,13 @@
+// Polyfill native WebSocket for Node environments where globalThis.WebSocket is not defined
+if (typeof (globalThis as any).WebSocket === 'undefined') {
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    (globalThis as any).WebSocket = require('ws');
+  } catch {
+    // Ignore if not present
+  }
+}
+
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
