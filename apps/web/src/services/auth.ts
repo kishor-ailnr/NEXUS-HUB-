@@ -1,16 +1,19 @@
 import { OrgMode, RegisterRequest, UserProfile } from '@nexus-ways/shared';
 import { supabase } from '../lib/supabase';
-import { apiFetch } from '../lib/api';
+import { apiFetch, setStoredAuthToken, clearStoredAuthToken } from '../lib/api';
 
 export const authService = {
   /**
    * Register a new user and organization through NestJS API
    */
   async register(data: RegisterRequest): Promise<UserProfile> {
-    const res = await apiFetch<{ user: UserProfile }>('/auth/register', {
+    const res = await apiFetch<{ user: UserProfile; accessToken?: string }>('/auth/register', {
       method: 'POST',
       data,
     });
+    if (res.accessToken) {
+      setStoredAuthToken(res.accessToken);
+    }
     return res.user;
   },
 
@@ -31,7 +34,7 @@ export const authService = {
 
     // Exchange session with API, passing division mode
     try {
-      const res = await apiFetch<{ user: UserProfile }>('/auth/session', {
+      const res = await apiFetch<{ user: UserProfile; accessToken?: string }>('/auth/session', {
         method: 'POST',
         headers: mode ? { 'X-NW-Mode': mode } : undefined,
         data: {
@@ -40,6 +43,9 @@ export const authService = {
           mode,
         },
       });
+      if (res.accessToken) {
+        setStoredAuthToken(res.accessToken);
+      }
       return res.user;
     } catch (apiErr) {
       console.warn('API session exchange failed, falling back to direct Supabase profile:', apiErr);
@@ -103,7 +109,7 @@ export const authService = {
    */
   async exchangeSession(accessToken: string, refreshToken: string, mode?: OrgMode): Promise<UserProfile> {
     try {
-      const res = await apiFetch<{ user: UserProfile }>('/auth/session', {
+      const res = await apiFetch<{ user: UserProfile; accessToken?: string }>('/auth/session', {
         method: 'POST',
         headers: mode ? { 'X-NW-Mode': mode } : undefined,
         data: {
@@ -112,6 +118,9 @@ export const authService = {
           mode,
         },
       });
+      if (res.accessToken) {
+        setStoredAuthToken(res.accessToken);
+      }
       return res.user;
     } catch (apiErr) {
       console.warn('API exchangeSession failed, falling back to direct Supabase profile:', apiErr);
@@ -214,9 +223,12 @@ export const authService = {
    * Refresh session using refresh cookie
    */
   async refreshSession(): Promise<UserProfile> {
-    const res = await apiFetch<{ user: UserProfile }>('/auth/refresh', {
+    const res = await apiFetch<{ user: UserProfile; accessToken?: string }>('/auth/refresh', {
       method: 'POST',
     });
+    if (res.accessToken) {
+      setStoredAuthToken(res.accessToken);
+    }
     return res.user;
   },
 
@@ -224,6 +236,7 @@ export const authService = {
    * Log out: clears cookies on backend and signs out from Supabase
    */
   async signOut(): Promise<void> {
+    clearStoredAuthToken();
     try {
       await apiFetch('/auth/logout', { method: 'POST' });
     } catch {

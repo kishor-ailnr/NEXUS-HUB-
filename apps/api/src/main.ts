@@ -35,7 +35,9 @@ async function bootstrap() {
         allowedOrigins.includes('*') ||
         allowedOrigins.includes(origin) ||
         origin.endsWith('.web.app') ||
-        origin.endsWith('.firebaseapp.com')
+        origin.endsWith('.firebaseapp.com') ||
+        origin.endsWith('.vercel.app') ||
+        origin.endsWith('.onrender.com')
       ) {
         return callback(null, true);
       }

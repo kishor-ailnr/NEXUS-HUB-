@@ -84,7 +84,12 @@ export class AuthController {
   ) {
     const { user, accessToken, refreshToken } = await this.authService.register(dto);
     this.setCookies(res, accessToken, refreshToken);
-    return { user, message: 'Registration successful' };
+    return {
+      user,
+      accessToken,
+      refreshToken,
+      message: 'Registration successful',
+    };
   }
 
   @Post('session')
@@ -102,7 +107,12 @@ export class AuthController {
       requestedMode,
     );
     this.setCookies(res, nwAccessToken, nwRefreshToken);
-    return { user, message: 'Session exchanged successfully' };
+    return {
+      user,
+      accessToken: nwAccessToken,
+      refreshToken: nwRefreshToken,
+      message: 'Session exchanged successfully',
+    };
   }
 
   @Post('refresh')
@@ -110,12 +120,18 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   async refresh(
     @Req() req: Request,
+    @Body() body: { refreshToken?: string },
     @Res({ passthrough: true }) res: Response,
   ) {
-    const refreshToken = req.cookies?.['nw_refresh'];
+    const refreshToken = req.cookies?.['nw_refresh'] || body?.refreshToken;
     const { user, newAccessToken, newRefreshToken } = await this.authService.refresh(refreshToken);
     this.setCookies(res, newAccessToken, newRefreshToken);
-    return { user, message: 'Session refreshed' };
+    return {
+      user,
+      accessToken: newAccessToken,
+      refreshToken: newRefreshToken,
+      message: 'Session refreshed',
+    };
   }
 
   @Post('logout')

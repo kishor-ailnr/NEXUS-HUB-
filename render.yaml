@@ -13,8 +13,9 @@ services:
       - key: FRONTEND_ORIGIN
         value: https://smart-supply-chain-v3.web.app,https://smart-supply-chain-v3.firebaseapp.com
       - key: SUPABASE_URL
-        sync: false
+        value: https://facnvxbznmbhzdkbumby.supabase.co
       - key: SUPABASE_SERVICE_ROLE_KEY
-        sync: false
+        value: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZhY252eGJ6bm1iaHpka2J1bWJ5Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4ODQ5MDc0OCwiZXhwIjoyMTA0MDY2NzQ4fQ.8uK3v-uUFumUVuL2kXz2D6F6iJmuZvwn0x6kSmbmKwc
       - key: SUPABASE_JWT_SECRET
-        sync: false
+        value: JGlVFMx95a3KR3+sLaqcUva4DWO6EiwkeE+oyVzlVtQMqWw0uOXG4AXNazEhYBtRYLvsBBq8w4/6bIA1Af3w2Q==
+

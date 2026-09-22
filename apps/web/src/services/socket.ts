@@ -1,5 +1,6 @@
 import { io, Socket } from 'socket.io-client';
 import { supabase } from '../lib/supabase';
+import { getValidAuthToken } from '../lib/api';
 import {
   NotificationItem,
   GhostPositionPayload,
@@ -114,8 +115,8 @@ export const socketService = {
       reconnectionDelay: 2000,
       auth: async (cb: (data: { token?: string }) => void) => {
         try {
-          const { data } = await supabase.auth.getSession();
-          cb({ token: data?.session?.access_token });
+          const token = await getValidAuthToken();
+          cb({ token: token || undefined });
         } catch {
           cb({});
         }

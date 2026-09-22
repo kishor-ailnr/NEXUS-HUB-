@@ -40,13 +40,53 @@ export class JwtAuthGuard implements CanActivate {
 
       // Otherwise fetch from database
       const client = this.supabaseService.adminClient;
-      const { data: userRow, error } = await client
+      let { data: userRow } = await client
         .from('users')
         .select('id, org_id, full_name, email, role')
         .eq('id', userId)
-        .single();
+        .maybeSingle();
 
-      if (error || !userRow) {
+      if (!userRow) {
+        const email = decoded.email || decoded.user_metadata?.email;
+        if (email) {
+          const fullName =
+            decoded.user_metadata?.full_name ||
+            decoded.user_metadata?.name ||
+            email.split('@')[0] ||
+            'User';
+
+          const { data: orgData } = await client
+            .from('organizations')
+            .insert({
+              name: `${fullName}'s Organization`,
+              country: 'India',
+              state: 'Maharashtra',
+              district: 'Mumbai City',
+              address: 'Headquarters',
+              mode: 'roadways',
+            })
+            .select()
+            .single();
+
+          if (orgData) {
+            const { data: newUser } = await client
+              .from('users')
+              .insert({
+                id: userId,
+                org_id: orgData.id,
+                full_name: fullName,
+                email: email.toLowerCase(),
+                role: 'manager',
+              })
+              .select('id, org_id, full_name, email, role')
+              .single();
+
+            userRow = newUser;
+          }
+        }
+      }
+
+      if (!userRow) {
         throw new UnauthorizedException('User account not found');
       }
 
