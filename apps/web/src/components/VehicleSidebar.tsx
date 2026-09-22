@@ -278,9 +278,26 @@ export const VehicleSidebar: React.FC<VehicleSidebarProps> = ({
 
       {/* Add Vehicle Modal */}
       {isAddModalOpen && (
-        <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white rounded-xl shadow-2xl max-w-md w-full p-6 border border-slate-200 animate-in fade-in zoom-in-95">
-            <h3 className="text-lg font-bold text-slate-900 mb-1">Add Vehicle to Fleet</h3>
+        <div
+          className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4"
+          onClick={() => setIsAddModalOpen(false)}
+        >
+          <div
+            className="bg-white rounded-xl shadow-2xl max-w-md w-full p-6 border border-slate-200 animate-in fade-in zoom-in-95"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between mb-1">
+              <h3 className="text-lg font-bold text-slate-900">Add Vehicle to Fleet</h3>
+              <button
+                type="button"
+                onClick={() => setIsAddModalOpen(false)}
+                className="text-slate-400 hover:text-slate-600 p-1 rounded-md transition-colors"
+                aria-label="Close add vehicle dialog"
+                data-testid="close-add-vehicle-button"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
             <p className="text-xs text-slate-500 mb-4">
               Register a commercial vehicle for operational routing and live simulation.
             </p>
@@ -373,16 +390,24 @@ export const VehicleSidebar: React.FC<VehicleSidebarProps> = ({
       )}
       {/* Add Driver Modal */}
       {isAddDriverModalOpen && (
-        <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white rounded-xl shadow-2xl max-w-md w-full p-6 border border-slate-200 animate-in fade-in zoom-in-95">
+        <div
+          className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4"
+          onClick={() => setIsAddDriverModalOpen(false)}
+        >
+          <div
+            className="bg-white rounded-xl shadow-2xl max-w-md w-full p-6 border border-slate-200 animate-in fade-in zoom-in-95"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="flex items-center justify-between mb-1">
               <h3 className="text-lg font-bold text-slate-900">Register Fleet Driver</h3>
               <button
                 type="button"
                 onClick={() => setIsAddDriverModalOpen(false)}
-                className="text-slate-400 hover:text-slate-600"
+                className="text-slate-400 hover:text-slate-600 p-1 rounded-md transition-colors"
+                aria-label="Close add driver dialog"
+                data-testid="close-add-driver-button"
               >
-                <X className="w-4 h-4" />
+                <X className="w-5 h-5" />
               </button>
             </div>
             <p className="text-xs text-slate-500 mb-4">
